@@ -185,6 +185,33 @@
   }
   .flash.on { opacity: .35; }
 
+  .help-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+  }
+  .help-modal.open { display: flex; }
+  .help-card {
+    background: var(--panel); color: var(--fg);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px 32px; max-width: 560px; width: 100%;
+    max-height: 90vh; overflow-y: auto;
+    position: relative; line-height: 1.45;
+  }
+  .help-card h2 { margin: 0 0 14px; font-size: 24px; font-weight: 600; }
+  .help-card ul { padding-left: 20px; margin: 0 0 14px; }
+  .help-card li { margin-bottom: 10px; font-size: 15px; }
+  .help-card code {
+    background: var(--pill); padding: 1px 6px; border-radius: 4px;
+    font-size: 13px;
+  }
+  .help-foot { font-size: 13px; color: var(--muted); margin: 0; }
+  .help-close {
+    position: absolute; top: 8px; right: 12px;
+    background: transparent; border: 0; color: var(--fg);
+    font-size: 28px; cursor: pointer; line-height: 1;
+  }
+
   /* ---------- Mobil ---------- */
   @media (max-width: 800px) {
     .app { flex-direction: column; }
@@ -265,6 +292,7 @@
     <div class="toolbar">
       <button class="icon" id="gearBtn" title="Visningsalternativ">⚙</button>
       <button class="icon" id="settingsBtn" title="Inställningar">⚒</button>
+      <button class="icon" id="helpBtn" title="Hjälp">ⓘ</button>
       <div class="warn-dots" id="warnDots"></div>
       <div class="popover" id="popover">
         <button class="pill" data-toggle="showLeft">Tid kvar <span>•</span></button>
@@ -316,6 +344,22 @@
   </main>
 </div>
 <div class="flash" id="flash"></div>
+
+<div class="help-modal" id="helpModal">
+  <div class="help-card">
+    <button class="help-close" id="helpClose" title="Stäng">×</button>
+    <h2>Så här använder du timern</h2>
+    <ul>
+      <li><b>Skapa lektionen</b> i sidopanelen (⚒ på mobil): en rad per moment. Lägg <code>-</code> framför en rad för att göra den till en underrubrik.</li>
+      <li><b>Dra för att ändra tid</b> — håll musen (eller fingret) på gränsen mellan två sektorer och dra för att flytta den. Du kan också dra lektionens start- eller slutgräns för att flytta hela passet.</li>
+      <li><b>Snabbstart</b> startar lektionen från och med nu.</li>
+      <li><b>Visningsalternativ</b> (⚙): toggla minuter, rubriker, markeringar, dag-/nattläge.</li>
+      <li><b>Ljudvarning</b> — under varje sektor finns en liten prick. Klicka för att aktivera en mjuk pling 2 minuter innan momentet tar slut. Klicka igen för att stänga av.</li>
+      <li><b>Allt sparas automatiskt</b> i webbläsaren tills du ändrar.</li>
+    </ul>
+    <p class="help-foot">Tips: klockan följer faktisk klocktid, så visaren står alltid rätt.</p>
+  </div>
+</div>
 
 <script>
 (() => {
@@ -1071,6 +1115,11 @@
     });
     $('quickStartBtn').addEventListener('click', quickStart);
     $('partsArea').addEventListener('input', () => { parseParts(); save(); });
+    $('helpBtn').addEventListener('click', () => $('helpModal').classList.add('open'));
+    $('helpClose').addEventListener('click', () => $('helpModal').classList.remove('open'));
+    $('helpModal').addEventListener('click', (e) => {
+      if (e.target.id === 'helpModal') $('helpModal').classList.remove('open');
+    });
     $('infoArea').addEventListener('input', () => {
       state.extraInfo = $('infoArea').value;
       renderSidebar();
