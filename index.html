@@ -34,17 +34,19 @@
   body { min-height: 100vh; display: flex; }
   .app { display: flex; width: 100%; min-height: 100vh; }
   .sidebar {
-    width: 230px;
+    width: max-content;
+    min-width: 260px;
+    max-width: 480px;
     background: var(--panel);
     border-right: 1px solid var(--border);
-    padding: 16px 12px;
+    padding: 20px 16px;
     position: relative;
     transition: margin-left .25s ease;
     overflow-y: auto;
     flex-shrink: 0;
   }
-  body.sb-collapsed .sidebar { margin-left: -230px; }
-  .sidebar h3 { margin: 0 0 14px; font-size: 22px; color: var(--fg); font-weight: 700; text-transform: none; letter-spacing: 0; padding: 0 10px; }
+  body.sb-collapsed .sidebar { margin-left: calc(-1 * var(--sb-w, 260px)); }
+  .sidebar h3 { margin: 0 0 18px; font-size: 50px; color: var(--fg); font-weight: 800; text-transform: none; letter-spacing: -1px; padding: 0 10px; line-height: 1; }
   .seglist { display: flex; flex-direction: column; gap: 4px; }
   .seglist .row {
     display: flex; align-items: center; gap: 10px;
@@ -57,7 +59,7 @@
   .seglist .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .seglist .min { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 17px; font-weight: 500; }
   .collapse-btn {
-    position: fixed; top: 50%; left: 216px;
+    position: fixed; top: 50%; left: calc(var(--sb-w, 260px) - 14px);
     transform: translateY(-50%);
     width: 28px; height: 28px;
     border-radius: 50%;
@@ -70,6 +72,7 @@
     transition: left .25s ease;
   }
   body.sb-collapsed .collapse-btn { left: 8px; }
+  body.sb-collapsed .sidebar { transition: margin-left .25s ease; }
   .main {
     flex: 1;
     display: flex; flex-direction: column;
@@ -90,8 +93,8 @@
   .top-time .now { font-size: 72px; font-weight: 200; letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums; }
   .top-time .left { font-size: 20px; color: var(--muted); margin-top: 6px; transition: opacity .2s; font-variant-numeric: tabular-nums; font-weight: 500; }
   .clock-wrap { position: relative; }
-  svg.clock { display: block; user-select: none; touch-action: none; width: min(85vh, calc(100vw - 220px)); height: min(85vh, calc(100vw - 220px)); }
-  body.sb-collapsed svg.clock { width: min(90vh, 95vw); height: min(90vh, 95vw); }
+  svg.clock { display: block; user-select: none; touch-action: none; width: min(85vh, calc(100vw - var(--sb-w, 260px) - 60px)); height: min(85vh, calc(100vw - var(--sb-w, 260px) - 60px)); }
+  body.sb-collapsed svg.clock { width: min(90vh, calc(100vw - 60px)); height: min(90vh, calc(100vw - 60px)); }
   .toolbar {
     display: flex; align-items: center; gap: 8px;
     background: var(--panel); border: 1px solid var(--border);
@@ -185,7 +188,7 @@
     </div>
 
     <div class="clock-wrap">
-      <svg class="clock" id="clock" viewBox="0 0 360 360" width="360" height="360"></svg>
+      <svg class="clock" id="clock" viewBox="-70 -70 500 500"></svg>
     </div>
 
     <div class="toolbar">
@@ -538,14 +541,6 @@
       if (i > 0) {
         const [x0, y0] = polar(a0, ri || 0);
         const [x1, y1] = polar(a0, R);
-        const ln = document.createElementNS(NS, 'line');
-        ln.setAttribute('x1', x0); ln.setAttribute('y1', y0);
-        ln.setAttribute('x2', x1); ln.setAttribute('y2', y1);
-        ln.setAttribute('stroke', bg);
-        ln.setAttribute('stroke-width', '2');
-        ln.setAttribute('pointer-events', 'none');
-        svg.appendChild(ln);
-
         const hit = document.createElementNS(NS, 'line');
         hit.setAttribute('x1', x0); hit.setAttribute('y1', y0);
         hit.setAttribute('x2', x1); hit.setAttribute('y2', y1);
@@ -568,8 +563,8 @@
         [lx, ly] = polar(midAngle, rText);
       }
       if (isPast) fillText = state.night ? '#5a5045' : '#9a8f7a';
-      else if (isActive) fillText = '#ffffff';
-      else fillText = state.night ? '#f0e8d8' : '#1a1410';
+      else if (isActive && !state.textOutside) fillText = '#ffffff';
+      else fillText = baseColor;
 
       const txt = document.createElementNS(NS, 'text');
       txt.setAttribute('x', lx);
@@ -634,6 +629,32 @@
       }
     }
 
+    // Lesson-start boundary — draggable to move start time (end clocktime stays fixed)
+    {
+      const [sx0, sy0] = polar(sa, ri || 0);
+      const [sx1, sy1] = polar(sa, R);
+      const sln = document.createElementNS(NS, 'line');
+      sln.setAttribute('x1', sx0); sln.setAttribute('y1', sy0);
+      sln.setAttribute('x2', sx1); sln.setAttribute('y2', sy1);
+      sln.setAttribute('stroke', state.night ? '#f0e8d8' : '#1a1410');
+      sln.setAttribute('stroke-width', '2.5');
+      sln.setAttribute('stroke-dasharray', '4 3');
+      sln.setAttribute('opacity', '0.6');
+      sln.setAttribute('pointer-events', 'none');
+      svg.appendChild(sln);
+
+      const shit = document.createElementNS(NS, 'line');
+      shit.setAttribute('x1', sx0); shit.setAttribute('y1', sy0);
+      shit.setAttribute('x2', sx1); shit.setAttribute('y2', sy1);
+      shit.setAttribute('stroke', 'transparent');
+      shit.setAttribute('stroke-width', '24');
+      shit.setAttribute('pointer-events', 'stroke');
+      shit.style.cursor = 'grab';
+      shit.dataset.lessonStart = '1';
+      shit.addEventListener('pointerdown', startStartDrag);
+      svg.appendChild(shit);
+    }
+
     // Lesson-end boundary — draggable to change total duration
     if (lessonSpan < 360 - 2) {
       const aEnd = sa + lessonSpan;
@@ -691,13 +712,19 @@
     // Does NOT extend into the center (so sluttid in mitten remains synlig).
     if (elapsed >= 0 && elapsed <= tot) {
       const ang = sa + elapsedSpan;
-      const innerR = ri > 0 ? ri - 4 : 14;
+      const innerR = ri > 0 ? ri - 4 : 30;
       const tipR = R + 2;
+      // Use absolute base width in px (perpendicular to angle) so it stays
+      // chunky even when innerR is small (pie mode).
+      const baseWidth = state.hollow ? 12 : 32;
       const [tx, ty] = polar(ang, tipR);
-      // Pointy spike: wider base at innerR, sharp tip at tipR
-      const baseSpread = 5.0; // degrees on each side at base
-      const [bx1, by1] = polar(ang + baseSpread, innerR);
-      const [bx2, by2] = polar(ang - baseSpread, innerR);
+      const aRad = (ang - 90) * Math.PI / 180;
+      const dx = Math.cos(aRad), dy = Math.sin(aRad);
+      const px = -dy, py = dx; // perpendicular
+      const cxB = CX + dx * innerR, cyB = CY + dy * innerR;
+      const halfW = baseWidth / 2;
+      const bx1 = cxB + px * halfW, by1 = cyB + py * halfW;
+      const bx2 = cxB - px * halfW, by2 = cyB - py * halfW;
 
       const dark = state.night ? '#f0e8d8' : '#1a1410';
       const light = state.night ? '#0d0d0d' : '#ffffff';
@@ -739,6 +766,18 @@
     window.addEventListener('pointermove', onDrag);
     window.addEventListener('pointerup', endDrag);
   }
+  function startStartDrag(e) {
+    e.preventDefault();
+    const ang0 = pointerAngle(e);
+    state.drag = {
+      type: 'start',
+      startMin0: state.startMin,
+      endMin0: state.startMin + totalMin(),
+      pointerAng0: ang0,
+    };
+    window.addEventListener('pointermove', onDrag);
+    window.addEventListener('pointerup', endDrag);
+  }
   function onDrag(e) {
     if (!state.drag) return;
     const ang = pointerAngle(e);
@@ -752,6 +791,30 @@
       if (newTotal < minTotal) newTotal = minTotal;
       if (newTotal > 360) newTotal = 360;
       scaleMinutesTo(Math.round(newTotal));
+      renderEndControl();
+      render();
+      return;
+    }
+
+    if (state.drag.type === 'start') {
+      let delta = ang - state.drag.pointerAng0;
+      while (delta > 180) delta -= 360;
+      while (delta < -180) delta += 360;
+      const minDelta = (delta / 360) * 60;
+      let newStart = Math.round(state.drag.startMin0 + minDelta);
+      let newTotal = state.drag.endMin0 - newStart;
+      const minTotal = state.parts.length * 2;
+      if (newTotal < minTotal) {
+        newTotal = minTotal;
+        newStart = state.drag.endMin0 - newTotal;
+      }
+      if (newTotal > 360) {
+        newTotal = 360;
+        newStart = state.drag.endMin0 - newTotal;
+      }
+      state.startMin = newStart;
+      scaleMinutesTo(newTotal);
+      $('startTime').value = fmtHM(state.startMin);
       renderEndControl();
       render();
       return;
@@ -915,6 +978,17 @@
 
     $('lessonTitle').textContent = state.title || '';
     setEndMode(state.endMode || 'end');
+
+    // Track sidebar width into CSS var so collapse button + clock width follow content
+    const sb = $('sidebar');
+    const updateSbWidth = () => {
+      document.documentElement.style.setProperty('--sb-w', sb.offsetWidth + 'px');
+    };
+    if (window.ResizeObserver) {
+      new ResizeObserver(updateSbWidth).observe(sb);
+    }
+    updateSbWidth();
+
     render();
     setInterval(tick, 1000);
   }
