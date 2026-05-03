@@ -197,7 +197,14 @@
       padding: 12px 14px;
       order: 2;
     }
-    body.sb-collapsed .sidebar { margin-left: 0; display: none; }
+    body.sb-collapsed .sidebar {
+      margin-left: 0;
+      padding: 0;
+      border-bottom: none;
+      max-height: 0;
+      overflow: hidden;
+    }
+    body.sb-collapsed .sidebar > *:not(.collapse-btn) { display: none; }
     .sidebar h3 { font-size: 28px; margin-bottom: 10px; padding: 0; }
     .seglist .row { font-size: 22px; padding: 6px 8px; gap: 10px; }
     .seglist .dot { width: 18px; height: 18px; }
@@ -226,9 +233,11 @@
       height: min(95vw, 80vh);
     }
 
-    .collapse-btn {
+    .collapse-btn,
+    body.sb-collapsed .collapse-btn {
       position: fixed; left: auto; right: 8px; top: 8px;
       transform: none;
+      z-index: 60;
     }
 
     .controls { width: 100%; max-width: 100%; }
