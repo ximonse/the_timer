@@ -357,7 +357,7 @@
       <li><b>Dra för att ändra tid</b> — håll musen (eller fingret) på gränsen mellan två sektorer och dra för att flytta den. Du kan också dra aktivitetens start- eller slutgräns för att flytta hela passet.</li>
       <li><b>Snabbstart</b> startar aktiviteten från och med nu.</li>
       <li><b>Visningsalternativ</b> (⚙): toggla minuter, rubriker, markeringar, dag-/nattläge.</li>
-      <li><b>Ljudvarning</b> — För varje sektor skapas en färgad punkt i minimenyn. Klicka för att toggla: <b>fylld</b> punkt = mjuk pling 2 minuter innan momentet tar slut, <b>tom</b> punkt = ingen ljudvarning.</li>
+      <li><b>Ljudvarning</b> — För varje sektor skapas en färgad punkt i minimenyn. Klicka för att toggla: <b>fylld</b> punkt = mjuk pling 2 minuter innan momentet tar slut <i>och</i> dubbel pling när det är slut, <b>tom</b> punkt = tyst.</li>
       <li><b>Allt sparas automatiskt</b> i webbläsaren tills du ändrar.</li>
     </ul>
     <p class="help-foot">Tips: klockan följer faktisk klocktid, så visaren står alltid rätt.</p>
@@ -1035,10 +1035,10 @@
 
   // ---------- audio ----------
   let audioCtx = null;
-  function beep() {
+  function beep(offset = 0) {
     try {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const t0 = audioCtx.currentTime;
+      const t0 = audioCtx.currentTime + offset;
       const dur = 1.4;
       // Two harmonically related sines = soft chime
       const freqs = [1568, 3136]; // G6 + G7 (octave)
@@ -1070,10 +1070,17 @@
       const segEnd = cum + state.minutes[i];
       if (state.warnings[i]) {
         const warnAt = segEnd - 2;
-        const key = `w-${i}-${state.startMin}-${segEnd}`;
-        if (elapsed >= warnAt && elapsed < warnAt + 1/60 && !state.warnedSet.has(key)) {
-          state.warnedSet.add(key);
+        const keyWarn = `w-${i}-${state.startMin}-${segEnd}`;
+        const keyEnd = `e-${i}-${state.startMin}-${segEnd}`;
+        if (elapsed >= warnAt && elapsed < warnAt + 1/60 && !state.warnedSet.has(keyWarn)) {
+          state.warnedSet.add(keyWarn);
           beep();
+          flash();
+        }
+        if (elapsed >= segEnd && elapsed < segEnd + 1/60 && !state.warnedSet.has(keyEnd)) {
+          state.warnedSet.add(keyEnd);
+          beep();
+          beep(0.45);
           flash();
         }
       }
