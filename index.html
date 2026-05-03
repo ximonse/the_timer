@@ -181,6 +181,24 @@
     cursor: pointer; font-family: inherit;
   }
   .quickstart:hover { opacity: .85; }
+  .flows { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .flow-list { display: flex; flex-direction: column; gap: 4px; }
+  .flow-item {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--pill); border-radius: 8px; padding: 4px 4px 4px 12px;
+  }
+  .flow-item .flow-name {
+    flex: 1; background: transparent; border: 0; color: var(--fg);
+    cursor: pointer; text-align: left; padding: 8px 0; font-size: 15px;
+    font-family: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .flow-item .flow-name:hover { color: var(--pill-on-fg, var(--fg)); text-decoration: underline; }
+  .flow-item .flow-del {
+    background: transparent; border: 0; color: var(--muted);
+    cursor: pointer; font-size: 16px; padding: 6px 10px; border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .flow-item .flow-del:hover { background: rgba(200,80,80,0.2); color: #d04848; }
   .flash {
     position: fixed; inset: 0; pointer-events: none;
     background: #ffae00; opacity: 0; z-index: 100;
@@ -343,6 +361,11 @@
         <button data-mode="len">Längd</button>
       </div>
       <div class="feedback" id="timeFeedback"></div>
+
+      <div class="flows">
+        <button id="saveFlowBtn" class="quickstart">💾 Spara flöde</button>
+        <div class="flow-list" id="flowList"></div>
+      </div>
     </div>
   </main>
 </div>
@@ -397,6 +420,7 @@
     segMinutesMode: 'planned', // 'off' | 'planned' | 'remaining'
     notes: [],
     extraInfo: '',
+    flows: [],
     showSegNotes: true,
     showExtraInfo: true,
     showSegLabels: true,
@@ -1105,6 +1129,80 @@
     checkWarnings();
   }
 
+  // ---------- flows ----------
+  function renderFlows() {
+    const list = $('flowList');
+    list.innerHTML = '';
+    (state.flows || []).forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'flow-item';
+      const name = document.createElement('button');
+      name.className = 'flow-name';
+      name.textContent = f.title || '(utan rubrik)';
+      name.title = 'Ladda flöde';
+      name.addEventListener('click', () => loadFlow(f.id));
+      const del = document.createElement('button');
+      del.className = 'flow-del';
+      del.textContent = '🗑';
+      del.title = 'Radera flöde';
+      del.addEventListener('click', () => {
+        if (confirm(`Radera flödet "${f.title || '(utan rubrik)'}"?`)) deleteFlow(f.id);
+      });
+      row.appendChild(name);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+
+  function saveFlow() {
+    const title = (state.title || '').trim() || 'Utan rubrik';
+    if (!state.flows) state.flows = [];
+    const existing = state.flows.find(f => f.title === title);
+    const data = {
+      id: existing ? existing.id : 'f-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+      title,
+      parts: [...state.parts],
+      minutes: [...state.minutes],
+      warnings: [...state.warnings],
+      notes: [...(state.notes || [])],
+      extraInfo: state.extraInfo || '',
+    };
+    if (existing) {
+      Object.assign(existing, data);
+    } else {
+      state.flows.push(data);
+    }
+    save();
+    renderFlows();
+  }
+
+  function loadFlow(id) {
+    const f = (state.flows || []).find(x => x.id === id);
+    if (!f) return;
+    state.title = f.title;
+    state.parts = [...f.parts];
+    state.minutes = [...f.minutes];
+    state.warnings = [...(f.warnings || f.parts.map(() => false))];
+    state.notes = [...(f.notes || [])];
+    state.extraInfo = f.extraInfo || '';
+    state.warnedSet = new Set();
+    $('titleInput').value = state.title;
+    $('lessonTitle').textContent = state.title;
+    $('partsArea').value = serializePartsAndNotes();
+    $('infoArea').value = state.extraInfo;
+    $('partsFeedback').textContent = state.parts.length + (state.parts.length === 1 ? ' del' : ' delar');
+    syncEndFromStartLen();
+    renderEndControl();
+    render();
+    save();
+  }
+
+  function deleteFlow(id) {
+    state.flows = (state.flows || []).filter(f => f.id !== id);
+    save();
+    renderFlows();
+  }
+
   // ---------- init ----------
   function init() {
     load();
@@ -1126,6 +1224,8 @@
     });
     $('quickStartBtn').addEventListener('click', quickStart);
     $('partsArea').addEventListener('input', () => { parseParts(); save(); });
+    $('saveFlowBtn').addEventListener('click', saveFlow);
+    renderFlows();
     $('helpBtn').addEventListener('click', () => $('helpModal').classList.add('open'));
     $('helpClose').addEventListener('click', () => $('helpModal').classList.remove('open'));
     $('helpModal').addEventListener('click', (e) => {
