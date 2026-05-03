@@ -184,6 +184,55 @@
     transition: opacity .15s;
   }
   .flash.on { opacity: .35; }
+
+  /* ---------- Mobil ---------- */
+  @media (max-width: 800px) {
+    .app { flex-direction: column; }
+    .sidebar {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+      order: 2;
+    }
+    body.sb-collapsed .sidebar { margin-left: 0; display: none; }
+    .sidebar h3 { font-size: 28px; margin-bottom: 10px; padding: 0; }
+    .seglist .row { font-size: 22px; padding: 6px 8px; gap: 10px; }
+    .seglist .dot { width: 18px; height: 18px; }
+    .seglist .min { font-size: 18px; }
+    .seglist .note { font-size: 15px; padding: 0 8px 6px 36px; }
+    .seglist .infobox { font-size: 16px; padding: 12px 14px; margin-top: 12px; }
+
+    .main { order: 1; padding: 8px 8px 12px; gap: 6px; }
+    .lesson-title {
+      position: static;
+      font-size: 28px;
+      letter-spacing: -1px;
+      max-width: 100%;
+      text-align: center;
+      padding: 0 8px;
+    }
+    .top-time .now { font-size: 40px; letter-spacing: -1px; }
+    .top-time .left { font-size: 14px; }
+
+    svg.clock {
+      width: min(95vw, 70vh);
+      height: min(95vw, 70vh);
+    }
+    body.sb-collapsed svg.clock {
+      width: min(95vw, 80vh);
+      height: min(95vw, 80vh);
+    }
+
+    .collapse-btn {
+      position: fixed; left: auto; right: 8px; top: 8px;
+      transform: none;
+    }
+
+    .controls { width: 100%; max-width: 100%; }
+  }
 </style>
 </head>
 <body>
