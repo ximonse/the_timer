@@ -35,8 +35,8 @@
   .app { display: flex; width: 100%; min-height: 100vh; }
   .sidebar {
     width: max-content;
-    min-width: 260px;
-    max-width: 480px;
+    min-width: 320px;
+    max-width: 640px;
     background: var(--panel);
     border-right: 1px solid var(--border);
     padding: 20px 16px;
@@ -49,15 +49,29 @@
   .sidebar h3 { margin: 0 0 18px; font-size: 50px; color: var(--fg); font-weight: 800; text-transform: none; letter-spacing: -1px; padding: 0 10px; line-height: 1; }
   .seglist { display: flex; flex-direction: column; gap: 4px; }
   .seglist .row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 10px; border-radius: 8px;
-    font-size: 20px;
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 12px; border-radius: 10px;
+    font-size: 48px;
+    font-weight: 400;
+    line-height: 1.05;
   }
-  .seglist .row.active { background: var(--pill); font-weight: 600; }
+  .seglist .row.active { background: var(--pill); font-weight: 500; }
   .seglist .row.past { opacity: .45; }
-  .seglist .dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+  .seglist .dot { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
   .seglist .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .seglist .min { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 17px; font-weight: 500; }
+  .seglist .min { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 32px; font-weight: 500; }
+  .seglist .note { color: var(--muted); font-size: 22px; line-height: 1.2; padding: 0 12px 8px 50px; white-space: pre-wrap; }
+  .seglist .infobox {
+    margin-top: 18px; padding: 16px 18px; border-radius: 12px;
+    background: #ffffff; color: #1a1410;
+    border: 1px solid #b8b0a4;
+    font-size: 26px; line-height: 1.35; white-space: pre-wrap;
+    font-style: italic;
+  }
+  .night .seglist .infobox {
+    background: #ececec; color: #000000;
+    border: none;
+  }
   .collapse-btn {
     position: fixed; top: 50%; left: calc(var(--sb-w, 260px) - 14px);
     transform: translateY(-50%);
@@ -191,7 +205,8 @@
     </div>
 
     <div class="toolbar">
-      <button class="icon" id="gearBtn" title="Inställningar">⚙</button>
+      <button class="icon" id="gearBtn" title="Visningsalternativ">⚙</button>
+      <button class="icon" id="settingsBtn" title="Inställningar">⚒</button>
       <div class="warn-dots" id="warnDots"></div>
       <div class="popover" id="popover">
         <button class="pill" data-toggle="showLeft">Tid kvar <span>•</span></button>
@@ -199,11 +214,13 @@
         <button class="pill" data-toggle="hollow">Ihålig mitt <span>•</span></button>
         <button class="pill" data-toggle="textOutside">Text utanför <span>•</span></button>
         <button class="pill" data-toggle="night">Nattläge <span>•</span></button>
-        <button class="pill" data-toggle="showControls">Visa inställningar <span>•</span></button>
         <button class="pill" data-toggle="showQuarter">Kvartmarkeringar <span>•</span></button>
         <button class="pill" data-toggle="showFive">5-minutersmarkeringar <span>•</span></button>
         <button class="pill" data-toggle="showMin">Minutmarkeringar <span>•</span></button>
-        <button class="pill" data-toggle="showSegMinutes">Minuter i rubriker <span>•</span></button>
+        <button class="pill" id="segMinutesModeBtn">Minuter: planerade</button>
+        <button class="pill" data-toggle="showSegNotes">Underrubriker i sidopanel <span>•</span></button>
+        <button class="pill" data-toggle="showExtraInfo">Info-ruta i sidopanel <span>•</span></button>
+        <button class="pill" data-toggle="showSegLabels">Visa rubriker <span>•</span></button>
       </div>
     </div>
 
@@ -217,6 +234,10 @@
         <label>Lektionsdelar (en per rad)</label>
         <textarea id="partsArea" placeholder="Genomgång&#10;Eget arbete&#10;Avslut"></textarea>
         <div class="feedback" id="partsFeedback">1 del</div>
+      </div>
+      <div>
+        <label>Info-ruta (fri text, visas som egen ruta i sidopanelen)</label>
+        <textarea id="infoArea" placeholder="T.ex. Att ta med: bok, penna&#10;Läxa: sida 42"></textarea>
       </div>
       <div class="row2">
         <div>
@@ -267,7 +288,12 @@
     showMin: false,
     showFive: true,
     showQuarter: true,
-    showSegMinutes: true,
+    segMinutesMode: 'planned', // 'off' | 'planned' | 'remaining'
+    notes: [],
+    extraInfo: '',
+    showSegNotes: true,
+    showExtraInfo: true,
+    showSegLabels: true,
     drag: null,
     warnedSet: new Set(),
   };
@@ -331,13 +357,40 @@
   }
 
   // ---------- input handling ----------
+  function serializePartsAndNotes() {
+    const out = [];
+    state.parts.forEach((p, i) => {
+      out.push(p);
+      const note = (state.notes && state.notes[i]) || '';
+      note.split('\n').filter(s => s.trim().length > 0).forEach(line => {
+        out.push('-' + line);
+      });
+    });
+    return out.join('\n');
+  }
+
   function parseParts() {
     const raw = $('partsArea').value;
-    const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    if (lines.length === 0) {
+    const lines = raw.split('\n').map(l => l.replace(/\s+$/, '')).filter(l => l.trim().length > 0);
+    const parts = [];
+    const notes = [];
+    lines.forEach(l => {
+      const t = l.trim();
+      if (t.startsWith('-') && parts.length > 0) {
+        const sub = t.replace(/^-\s*/, '');
+        notes[parts.length - 1] = notes[parts.length - 1]
+          ? notes[parts.length - 1] + '\n' + sub
+          : sub;
+      } else {
+        parts.push(t);
+      }
+    });
+    if (parts.length === 0) {
       state.parts = ['Lektion'];
+      state.notes = [''];
     } else {
-      state.parts = lines;
+      state.parts = parts;
+      state.notes = parts.map((_, i) => notes[i] || '');
     }
     // resize minutes/warnings, distribute current total evenly
     const tot = totalMin() || 45;
@@ -421,6 +474,12 @@
       const k = p.dataset.toggle;
       p.classList.toggle('on', !!state[k]);
     });
+    const segBtn = $('segMinutesModeBtn');
+    if (segBtn) {
+      const labels = { off: 'Minuter: av', planned: 'Minuter: planerade', remaining: 'Minuter: kvar' };
+      segBtn.textContent = labels[state.segMinutesMode] || labels.planned;
+      segBtn.classList.toggle('on', state.segMinutesMode !== 'off');
+    }
     document.documentElement.classList.toggle('night', state.night);
     document.body.classList.toggle('night', state.night);
     $('leftText').style.opacity = state.showLeft ? '1' : '0';
@@ -471,11 +530,33 @@
       const isPast = elapsed >= segEnd;
       const row = document.createElement('div');
       row.className = 'row' + (isActive ? ' active' : '') + (isPast ? ' past' : '');
-      const minHtml = state.showSegMinutes ? `<span class="min">${state.minutes[i]}m</span>` : '';
+      let minHtml = '';
+      if (state.segMinutesMode === 'planned') {
+        minHtml = `<span class="min">${state.minutes[i]}m</span>`;
+      } else if (state.segMinutesMode === 'remaining') {
+        let mins;
+        if (isPast) mins = 0;
+        else if (isActive) mins = Math.max(0, Math.ceil(segEnd - elapsed));
+        else mins = state.minutes[i];
+        minHtml = `<span class="min">${mins}m kvar</span>`;
+      }
       row.innerHTML = `<span class="dot" style="background:${cs[i % cs.length]}"></span><span class="name">${escapeHtml(p)}</span>${minHtml}`;
       c.appendChild(row);
+      const note = (state.notes[i] || '').trim();
+      if (state.showSegNotes && note) {
+        const noteEl = document.createElement('div');
+        noteEl.className = 'note';
+        noteEl.textContent = note;
+        c.appendChild(noteEl);
+      }
       cum = segEnd;
     });
+    if (state.showExtraInfo && (state.extraInfo || '').trim()) {
+      const box = document.createElement('div');
+      box.className = 'infobox';
+      box.textContent = state.extraInfo;
+      c.appendChild(box);
+    }
   }
 
   function escapeHtml(s) {
@@ -503,6 +584,7 @@
     const bg = state.night ? '#0d0d0d' : '#f5efe2';
     const dimSuffix = state.night ? '55' : '40';
     const grayPast = state.night ? '#3a3530' : '#C8C5BE';
+    const labelDefer = [];
 
     state.parts.forEach((p, i) => {
       const segStartMin = cumMin;
@@ -564,41 +646,21 @@
         const rText = ri > 0 ? (R + ri) / 2 : R / 2;
         [lx, ly] = polar(midAngle, rText);
       }
-      if (isPast) fillText = state.night ? '#5a5045' : '#9a8f7a';
-      else if (isActive && !state.textOutside) fillText = '#ffffff';
-      else fillText = baseColor;
+      // Alltid sektorfärg på texten — chip ger kontrast mot sektorbakgrunden.
+      fillText = baseColor;
 
-      const txt = document.createElementNS(NS, 'text');
-      txt.setAttribute('x', lx);
-      txt.setAttribute('y', ly);
-      txt.setAttribute('text-anchor', 'middle');
-      txt.setAttribute('dominant-baseline', 'middle');
-      txt.setAttribute('font-size', '15');
-      txt.setAttribute('font-weight', '700');
-      txt.setAttribute('fill', fillText);
-      txt.setAttribute('pointer-events', 'none');
-      txt.textContent = state.showSegMinutes ? `${truncate(p, 14)} ${state.minutes[i]}m` : truncate(p, 14);
-      svg.appendChild(txt);
-
-      // Chip background only when text is outside the clock
-      if (state.textOutside) {
-        try {
-          const bb = txt.getBBox();
-          const padX = 5, padY = 2;
-          const rect = document.createElementNS(NS, 'rect');
-          rect.setAttribute('x', bb.x - padX);
-          rect.setAttribute('y', bb.y - padY);
-          rect.setAttribute('width', bb.width + padX * 2);
-          rect.setAttribute('height', bb.height + padY * 2);
-          rect.setAttribute('rx', 4);
-          rect.setAttribute('fill', bg);
-          rect.setAttribute('fill-opacity', '0.92');
-          rect.setAttribute('stroke', state.night ? '#4a3e2a' : '#d8cfb8');
-          rect.setAttribute('stroke-width', '1');
-          rect.setAttribute('pointer-events', 'none');
-          svg.insertBefore(rect, txt);
-        } catch (_) {}
+      // Defer label rendering until after spike — labels always on top
+      let labelText = truncate(p, 14);
+      if (state.segMinutesMode === 'planned') {
+        labelText += ` ${state.minutes[i]}m`;
+      } else if (state.segMinutesMode === 'remaining') {
+        let mins;
+        if (isPast) mins = 0;
+        else if (isActive) mins = Math.max(0, Math.ceil(segEndMin - elapsed));
+        else mins = state.minutes[i];
+        labelText += ` ${mins}m kvar`;
       }
+      labelDefer.push({ lx, ly, fillText, text: labelText });
 
       cumMin = segEndMin;
     });
@@ -624,27 +686,19 @@
         t2.setAttribute('x', CX); t2.setAttribute('y', CY + 12);
         t2.setAttribute('text-anchor', 'middle');
         t2.setAttribute('font-size', '20');
-        t2.setAttribute('font-weight', '600');
+        t2.setAttribute('font-weight', '200');
+        t2.setAttribute('letter-spacing', '-0.5');
+        t2.setAttribute('font-variant-numeric', 'tabular-nums');
         t2.setAttribute('fill', state.night ? '#f0e8d8' : '#2a2520');
         t2.textContent = fmtHM(state.startMin + tot);
         svg.appendChild(t2);
       }
     }
 
-    // Lesson-start boundary — draggable to move start time (end clocktime stays fixed)
+    // Lesson-start boundary — invisible drag-hit only
     {
       const [sx0, sy0] = polar(sa, ri || 0);
       const [sx1, sy1] = polar(sa, R);
-      const sln = document.createElementNS(NS, 'line');
-      sln.setAttribute('x1', sx0); sln.setAttribute('y1', sy0);
-      sln.setAttribute('x2', sx1); sln.setAttribute('y2', sy1);
-      sln.setAttribute('stroke', state.night ? '#f0e8d8' : '#1a1410');
-      sln.setAttribute('stroke-width', '2.5');
-      sln.setAttribute('stroke-dasharray', '4 3');
-      sln.setAttribute('opacity', '0.6');
-      sln.setAttribute('pointer-events', 'none');
-      svg.appendChild(sln);
-
       const shit = document.createElementNS(NS, 'line');
       shit.setAttribute('x1', sx0); shit.setAttribute('y1', sy0);
       shit.setAttribute('x2', sx1); shit.setAttribute('y2', sy1);
@@ -657,21 +711,11 @@
       svg.appendChild(shit);
     }
 
-    // Lesson-end boundary — draggable to change total duration
+    // Lesson-end boundary — invisible drag-hit only
     if (lessonSpan < 360 - 2) {
       const aEnd = sa + lessonSpan;
       const [ex0, ey0] = polar(aEnd, ri || 0);
       const [ex1, ey1] = polar(aEnd, R);
-      const eln = document.createElementNS(NS, 'line');
-      eln.setAttribute('x1', ex0); eln.setAttribute('y1', ey0);
-      eln.setAttribute('x2', ex1); eln.setAttribute('y2', ey1);
-      eln.setAttribute('stroke', state.night ? '#f0e8d8' : '#1a1410');
-      eln.setAttribute('stroke-width', '2.5');
-      eln.setAttribute('stroke-dasharray', '4 3');
-      eln.setAttribute('opacity', '0.6');
-      eln.setAttribute('pointer-events', 'none');
-      svg.appendChild(eln);
-
       const ehit = document.createElementNS(NS, 'line');
       ehit.setAttribute('x1', ex0); ehit.setAttribute('y1', ey0);
       ehit.setAttribute('x2', ex1); ehit.setAttribute('y2', ey1);
@@ -711,9 +755,9 @@
     }
 
     // Pointer arm — pointy spike from inner edge out to outer edge.
-    // Does NOT extend into the center (so sluttid in mitten remains synlig).
-    if (elapsed >= 0 && elapsed <= tot) {
-      const ang = sa + elapsedSpan;
+    // Always visible — speglar faktisk klocktid på urtavlan.
+    {
+      const ang = (nowMinutes() % 60 / 60) * 360;
       // Same shape regardless of hollow — base 22px wide, starts 30px from center.
       const innerR = 30;
       const tipR = R + 2;
@@ -737,6 +781,38 @@
       spike.setAttribute('stroke-width', '1.5');
       spike.setAttribute('stroke-linejoin', 'round');
       svg.appendChild(spike);
+    }
+
+    // Deferred labels — alltid överst, togglebara via showSegLabels.
+    if (state.showSegLabels) {
+      labelDefer.forEach(({ lx, ly, fillText, text }) => {
+        const t = document.createElementNS(NS, 'text');
+        t.setAttribute('x', lx);
+        t.setAttribute('y', ly);
+        t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('dominant-baseline', 'middle');
+        t.setAttribute('font-size', state.textOutside ? '14' : '13');
+        t.setAttribute('font-weight', '600');
+        t.setAttribute('fill', fillText);
+        t.setAttribute('pointer-events', 'none');
+        t.textContent = text;
+
+        svg.appendChild(t);
+        const bb = t.getBBox();
+        const padX = 6, padY = 1.5;
+        const chip = document.createElementNS(NS, 'rect');
+        chip.setAttribute('x', bb.x - padX);
+        chip.setAttribute('y', bb.y - padY);
+        chip.setAttribute('width', bb.width + padX * 2);
+        chip.setAttribute('height', bb.height + padY * 2);
+        chip.setAttribute('rx', 3);
+        chip.setAttribute('fill', state.night ? '#1a1410' : '#fffaf0');
+        chip.setAttribute('stroke', fillText);
+        chip.setAttribute('stroke-width', '1');
+        chip.setAttribute('opacity', '0.95');
+        chip.setAttribute('pointer-events', 'none');
+        svg.insertBefore(chip, t);
+      });
     }
   }
 
@@ -926,7 +1002,8 @@
     }
     $('startTime').value = fmtHM(state.startMin);
     $('titleInput').value = state.title || '';
-    $('partsArea').value = state.parts.join('\n');
+    $('partsArea').value = serializePartsAndNotes();
+    $('infoArea').value = state.extraInfo || '';
     syncEndFromStartLen();
 
     $('titleInput').addEventListener('input', () => {
@@ -936,6 +1013,11 @@
     });
     $('quickStartBtn').addEventListener('click', quickStart);
     $('partsArea').addEventListener('input', () => { parseParts(); save(); });
+    $('infoArea').addEventListener('input', () => {
+      state.extraInfo = $('infoArea').value;
+      renderSidebar();
+      save();
+    });
     $('startTime').addEventListener('input', () => {
       const [h, m] = $('startTime').value.split(':').map(Number);
       if (isNaN(h) || isNaN(m)) return;
@@ -953,6 +1035,11 @@
       e.stopPropagation();
       $('popover').classList.toggle('open');
     });
+    $('settingsBtn').addEventListener('click', () => {
+      state.showControls = !state.showControls;
+      render();
+      save();
+    });
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.toolbar')) $('popover').classList.remove('open');
     });
@@ -964,6 +1051,16 @@
         save();
       });
     });
+    const segMinBtn = $('segMinutesModeBtn');
+    if (segMinBtn) {
+      segMinBtn.addEventListener('click', () => {
+        const order = ['off', 'planned', 'remaining'];
+        const cur = order.indexOf(state.segMinutesMode);
+        state.segMinutesMode = order[(cur + 1) % order.length];
+        render();
+        save();
+      });
+    }
     $('collapseBtn').addEventListener('click', () => {
       document.body.classList.toggle('sb-collapsed');
       $('collapseBtn').textContent = document.body.classList.contains('sb-collapsed') ? '›' : '‹';
