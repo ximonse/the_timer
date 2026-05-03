@@ -122,6 +122,8 @@
     background: transparent; border: 0; color: var(--muted);
     cursor: pointer; font-size: 16px; padding: 4px 8px;
     border-radius: 999px;
+    font-family: "Segoe UI Symbol", "Apple Symbols", system-ui, sans-serif;
+    font-variant-emoji: text;
   }
   .toolbar button.icon:hover { background: var(--pill); color: var(--fg); }
   .warn-dots { display: flex; gap: 4px; padding: 0 6px; border-left: 1px solid var(--border); }
@@ -177,10 +179,11 @@
   .quickstart {
     background: var(--pill-on); color: var(--pill-on-fg);
     border: 0; border-radius: 999px;
-    padding: 12px 16px; font-size: 15px; font-weight: 600;
+    padding: 12px 16px; font-size: 15px; font-weight: 500;
     cursor: pointer; font-family: inherit;
+    transition: background .15s, color .15s;
   }
-  .quickstart:hover { opacity: .85; }
+  .quickstart:hover { background: var(--fg); color: var(--bg); opacity: 1; }
   .flows { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
   .flow-list { display: flex; flex-direction: column; gap: 4px; }
   .flow-item {
@@ -195,10 +198,12 @@
   .flow-item .flow-name:hover { color: var(--pill-on-fg, var(--fg)); text-decoration: underline; }
   .flow-item .flow-del {
     background: transparent; border: 0; color: var(--muted);
-    cursor: pointer; font-size: 16px; padding: 6px 10px; border-radius: 6px;
+    cursor: pointer; font-size: 14px; padding: 6px 10px; border-radius: 6px;
     flex-shrink: 0;
+    font-family: "Segoe UI Symbol", "Apple Symbols", system-ui, sans-serif;
+    font-variant-emoji: text;
   }
-  .flow-item .flow-del:hover { background: rgba(200,80,80,0.2); color: #d04848; }
+  .flow-item .flow-del:hover { background: var(--pill); color: var(--fg); }
   .flash {
     position: fixed; inset: 0; pointer-events: none;
     background: #ffae00; opacity: 0; z-index: 100;
@@ -227,6 +232,13 @@
     font-size: 13px;
   }
   .help-foot { font-size: 13px; color: var(--muted); margin: 0; }
+  .help-card .ico {
+    color: var(--muted);
+    font-family: "Segoe UI Symbol", "Apple Symbols", system-ui, sans-serif;
+    font-variant-emoji: text;
+    font-weight: 500;
+    padding: 0 2px;
+  }
   .help-close {
     position: absolute; top: 8px; right: 12px;
     background: transparent; border: 0; color: var(--fg);
@@ -311,8 +323,8 @@
     </div>
 
     <div class="toolbar">
-      <button class="icon" id="gearBtn" title="Visningsalternativ">⚙</button>
-      <button class="icon" id="settingsBtn" title="Inställningar">⚒</button>
+      <button class="icon" id="gearBtn" title="Visningsalternativ">⚙︎</button>
+      <button class="icon" id="settingsBtn" title="Inställningar">⚒︎</button>
       <button class="icon" id="helpBtn" title="Hjälp">ⓘ</button>
       <div class="warn-dots" id="warnDots"></div>
       <div class="popover" id="popover">
@@ -336,7 +348,7 @@
         <label>Huvudrubrik</label>
         <input type="text" id="titleInput" placeholder="Matematik">
       </div>
-      <button id="quickStartBtn" class="quickstart">⚡ Snabbstart nu</button>
+      <button id="quickStartBtn" class="quickstart">Snabbstart nu</button>
       <div>
         <label>Lektionsdelar (en per rad)</label>
         <textarea id="partsArea" placeholder="Genomgång&#10;Eget arbete&#10;Avslut"></textarea>
@@ -363,7 +375,7 @@
       <div class="feedback" id="timeFeedback"></div>
 
       <div class="flows">
-        <button id="saveFlowBtn" class="quickstart">💾 Spara flöde</button>
+        <button id="saveFlowBtn" class="quickstart">Spara flöde</button>
         <div class="flow-list" id="flowList"></div>
       </div>
     </div>
@@ -376,10 +388,10 @@
     <button class="help-close" id="helpClose" title="Stäng">×</button>
     <h2>Så här använder du timern</h2>
     <ul>
-      <li><b>Skapa en aktivitet</b> via verktygsikonen (⚒). Skriv en rad per moment. Lägg <code>-</code> framför en rad för att göra den till en underrubrik.</li>
+      <li><b>Skapa en aktivitet</b> via verktygsikonen (<span class="ico">⚒︎</span>). Skriv en rad per moment. Lägg <code>-</code> framför en rad för att göra den till en underrubrik.</li>
       <li><b>Dra för att ändra tid</b> — håll musen (eller fingret) på gränsen mellan två sektorer och dra för att flytta den. Du kan också dra aktivitetens start- eller slutgräns för att flytta hela passet.</li>
       <li><b>Snabbstart</b> startar aktiviteten från och med nu.</li>
-      <li><b>Visningsalternativ</b> (⚙): toggla minuter, rubriker, markeringar, dag-/nattläge.</li>
+      <li><b>Visningsalternativ</b> (<span class="ico">⚙︎</span>): toggla minuter, rubriker, markeringar, dag-/nattläge.</li>
       <li><b>Ljudvarning</b> — För varje sektor skapas en färgad punkt i minimenyn. Klicka för att toggla: <b>fylld</b> punkt = mjuk pling 2 minuter innan momentet tar slut <i>och</i> dubbel pling när det är slut, <b>tom</b> punkt = tyst.</li>
       <li><b>Allt sparas automatiskt</b> i webbläsaren tills du ändrar.</li>
     </ul>
@@ -1143,7 +1155,8 @@
       name.addEventListener('click', () => loadFlow(f.id));
       const del = document.createElement('button');
       del.className = 'flow-del';
-      del.textContent = '🗑';
+      del.textContent = '×';
+      del.style.fontSize = '20px';
       del.title = 'Radera flöde';
       del.addEventListener('click', () => {
         if (confirm(`Radera flödet "${f.title || '(utan rubrik)'}"?`)) deleteFlow(f.id);
