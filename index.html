@@ -82,19 +82,19 @@
     position: relative;
   }
   .lesson-title {
-    position: absolute; top: 16px; left: 24px;
-    font-size: 38px; font-weight: 800; line-height: 1;
-    letter-spacing: -1px;
+    position: absolute; top: 24px; left: 32px;
+    font-size: 72px; font-weight: 200; line-height: 1;
+    letter-spacing: -2px;
     color: var(--fg);
-    max-width: 50%;
+    max-width: 55%;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .top-time { text-align: center; }
   .top-time .now { font-size: 72px; font-weight: 200; letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums; }
   .top-time .left { font-size: 20px; color: var(--muted); margin-top: 6px; transition: opacity .2s; font-variant-numeric: tabular-nums; font-weight: 500; }
   .clock-wrap { position: relative; }
-  svg.clock { display: block; user-select: none; touch-action: none; width: min(85vh, calc(100vw - var(--sb-w, 260px) - 60px)); height: min(85vh, calc(100vw - var(--sb-w, 260px) - 60px)); }
-  body.sb-collapsed svg.clock { width: min(90vh, calc(100vw - 60px)); height: min(90vh, calc(100vw - 60px)); }
+  svg.clock { display: block; user-select: none; touch-action: none; overflow: visible; width: min(85vh, calc(100vw - var(--sb-w, 260px) - 200px)); height: min(85vh, calc(100vw - var(--sb-w, 260px) - 200px)); }
+  body.sb-collapsed svg.clock { width: min(90vh, calc(100vw - 220px)); height: min(90vh, calc(100vw - 220px)); }
   .toolbar {
     display: flex; align-items: center; gap: 8px;
     background: var(--panel); border: 1px solid var(--border);
@@ -176,7 +176,6 @@
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <button class="collapse-btn" id="collapseBtn" title="Dölj panel">‹</button>
-    <h3>Delar</h3>
     <div class="seglist" id="seglist"></div>
   </aside>
 
@@ -188,7 +187,7 @@
     </div>
 
     <div class="clock-wrap">
-      <svg class="clock" id="clock" viewBox="-70 -70 500 500"></svg>
+      <svg class="clock" id="clock" viewBox="0 0 360 360" style="overflow: visible"></svg>
     </div>
 
     <div class="toolbar">
@@ -204,6 +203,7 @@
         <button class="pill" data-toggle="showQuarter">Kvartmarkeringar <span>•</span></button>
         <button class="pill" data-toggle="showFive">5-minutersmarkeringar <span>•</span></button>
         <button class="pill" data-toggle="showMin">Minutmarkeringar <span>•</span></button>
+        <button class="pill" data-toggle="showSegMinutes">Minuter i rubriker <span>•</span></button>
       </div>
     </div>
 
@@ -267,6 +267,7 @@
     showMin: false,
     showFive: true,
     showQuarter: true,
+    showSegMinutes: true,
     drag: null,
     warnedSet: new Set(),
   };
@@ -470,7 +471,8 @@
       const isPast = elapsed >= segEnd;
       const row = document.createElement('div');
       row.className = 'row' + (isActive ? ' active' : '') + (isPast ? ' past' : '');
-      row.innerHTML = `<span class="dot" style="background:${cs[i % cs.length]}"></span><span class="name">${escapeHtml(p)}</span><span class="min">${state.minutes[i]}m</span>`;
+      const minHtml = state.showSegMinutes ? `<span class="min">${state.minutes[i]}m</span>` : '';
+      row.innerHTML = `<span class="dot" style="background:${cs[i % cs.length]}"></span><span class="name">${escapeHtml(p)}</span>${minHtml}`;
       c.appendChild(row);
       cum = segEnd;
     });
@@ -575,7 +577,7 @@
       txt.setAttribute('font-weight', '700');
       txt.setAttribute('fill', fillText);
       txt.setAttribute('pointer-events', 'none');
-      txt.textContent = `${truncate(p, 14)} ${state.minutes[i]}m`;
+      txt.textContent = state.showSegMinutes ? `${truncate(p, 14)} ${state.minutes[i]}m` : truncate(p, 14);
       svg.appendChild(txt);
 
       // Chip background only when text is outside the clock
@@ -712,11 +714,10 @@
     // Does NOT extend into the center (so sluttid in mitten remains synlig).
     if (elapsed >= 0 && elapsed <= tot) {
       const ang = sa + elapsedSpan;
-      const innerR = ri > 0 ? ri - 4 : 30;
+      // Same shape regardless of hollow — base 22px wide, starts 30px from center.
+      const innerR = 30;
       const tipR = R + 2;
-      // Use absolute base width in px (perpendicular to angle) so it stays
-      // chunky even when innerR is small (pie mode).
-      const baseWidth = state.hollow ? 12 : 32;
+      const baseWidth = 22;
       const [tx, ty] = polar(ang, tipR);
       const aRad = (ang - 90) * Math.PI / 180;
       const dx = Math.cos(aRad), dy = Math.sin(aRad);
