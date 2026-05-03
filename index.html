@@ -34,29 +34,30 @@
   body { min-height: 100vh; display: flex; }
   .app { display: flex; width: 100%; min-height: 100vh; }
   .sidebar {
-    width: 190px;
+    width: 230px;
     background: var(--panel);
     border-right: 1px solid var(--border);
     padding: 16px 12px;
     position: relative;
     transition: margin-left .25s ease;
     overflow-y: auto;
+    flex-shrink: 0;
   }
-  body.sb-collapsed .sidebar { margin-left: -190px; }
-  .sidebar h3 { margin: 0 0 14px; font-size: 15px; color: var(--fg); font-weight: 700; text-transform: none; letter-spacing: 0; padding: 0 10px; }
+  body.sb-collapsed .sidebar { margin-left: -230px; }
+  .sidebar h3 { margin: 0 0 14px; font-size: 22px; color: var(--fg); font-weight: 700; text-transform: none; letter-spacing: 0; padding: 0 10px; }
   .seglist { display: flex; flex-direction: column; gap: 4px; }
   .seglist .row {
     display: flex; align-items: center; gap: 10px;
     padding: 8px 10px; border-radius: 8px;
-    font-size: 15px;
+    font-size: 20px;
   }
   .seglist .row.active { background: var(--pill); font-weight: 600; }
   .seglist .row.past { opacity: .45; }
   .seglist .dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
   .seglist .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .seglist .min { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 500; }
+  .seglist .min { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 17px; font-weight: 500; }
   .collapse-btn {
-    position: fixed; top: 50%; left: 176px;
+    position: fixed; top: 50%; left: 216px;
     transform: translateY(-50%);
     width: 28px; height: 28px;
     border-radius: 50%;
@@ -73,14 +74,24 @@
     flex: 1;
     display: flex; flex-direction: column;
     align-items: center; justify-content: flex-start;
-    padding: 24px 16px;
-    gap: 12px;
+    padding: 16px 16px;
+    gap: 8px;
+    position: relative;
+  }
+  .lesson-title {
+    position: absolute; top: 16px; left: 24px;
+    font-size: 38px; font-weight: 800; line-height: 1;
+    letter-spacing: -1px;
+    color: var(--fg);
+    max-width: 50%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .top-time { text-align: center; }
   .top-time .now { font-size: 72px; font-weight: 200; letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums; }
   .top-time .left { font-size: 20px; color: var(--muted); margin-top: 6px; transition: opacity .2s; font-variant-numeric: tabular-nums; font-weight: 500; }
   .clock-wrap { position: relative; }
-  svg.clock { display: block; user-select: none; touch-action: none; width: min(70vh, 90vw); height: min(70vh, 90vw); max-width: 640px; max-height: 640px; }
+  svg.clock { display: block; user-select: none; touch-action: none; width: min(85vh, calc(100vw - 220px)); height: min(85vh, calc(100vw - 220px)); }
+  body.sb-collapsed svg.clock { width: min(90vh, 95vw); height: min(90vh, 95vw); }
   .toolbar {
     display: flex; align-items: center; gap: 8px;
     background: var(--panel); border: 1px solid var(--border);
@@ -127,7 +138,7 @@
     width: min(360px, 100%);
   }
   .controls label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
-  .controls input[type=time], .controls input[type=number], .controls textarea {
+  .controls input[type=text], .controls input[type=time], .controls input[type=number], .controls textarea {
     background: var(--bg); color: var(--fg);
     border: 1px solid var(--border); border-radius: 8px;
     padding: 8px 10px; font-size: 14px; width: 100%;
@@ -143,6 +154,13 @@
   }
   .mode-toggle button.on { background: var(--pill-on); color: var(--pill-on-fg); }
   .feedback { font-size: 12px; color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .quickstart {
+    background: var(--pill-on); color: var(--pill-on-fg);
+    border: 0; border-radius: 999px;
+    padding: 12px 16px; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .quickstart:hover { opacity: .85; }
   .flash {
     position: fixed; inset: 0; pointer-events: none;
     background: #ffae00; opacity: 0; z-index: 100;
@@ -160,6 +178,7 @@
   </aside>
 
   <main class="main">
+    <div class="lesson-title" id="lessonTitle"></div>
     <div class="top-time">
       <div class="now" id="nowText">--:--</div>
       <div class="left" id="leftText">--:-- kvar</div>
@@ -186,6 +205,11 @@
     </div>
 
     <div class="controls">
+      <div>
+        <label>Huvudrubrik</label>
+        <input type="text" id="titleInput" placeholder="Matematik">
+      </div>
+      <button id="quickStartBtn" class="quickstart">⚡ Snabbstart nu</button>
       <div>
         <label>Lektionsdelar (en per rad)</label>
         <textarea id="partsArea" placeholder="Genomgång&#10;Eget arbete&#10;Avslut"></textarea>
@@ -222,13 +246,15 @@
   const COLORS_DAY   = ['#C97548','#6B9B5F','#A85969','#5A7FA3','#C9994A','#7A8E59','#9B5C49','#5A8E89'];
   const COLORS_NIGHT = ['#E89870','#92C088','#D08596','#8AAACE','#E8BC72','#A5B884','#C28778','#86B5B0'];
 
+  const STORAGE_KEY = 'the_timer_state_v1';
   const state = {
+    title: '',
     parts: ['Lektion'],
-    minutes: [45],         // length per part
+    minutes: [45],
     warnings: [false],
-    startMin: 8 * 60,      // start time in minutes
-    endMin: 8 * 60 + 45,   // end time in minutes
-    endMode: 'end',        // 'end' or 'len'
+    startMin: 8 * 60,
+    endMin: 8 * 60 + 45,
+    endMode: 'end',
     showLeft: true,
     showCenterEnd: true,
     hollow: true,
@@ -241,6 +267,25 @@
     drag: null,
     warnedSet: new Set(),
   };
+
+  function save() {
+    try {
+      const { drag, warnedSet, ...persist } = state;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(persist));
+    } catch (_) {}
+  }
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      Object.assign(state, data);
+    } catch (_) {}
+  }
+  function hardReset() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+    location.reload();
+  }
 
   // ---------- helpers ----------
   const pad = (n) => String(n).padStart(2, '0');
@@ -524,7 +569,7 @@
       }
       if (isPast) fillText = state.night ? '#5a5045' : '#9a8f7a';
       else if (isActive) fillText = '#ffffff';
-      else fillText = baseColor;
+      else fillText = state.night ? '#f0e8d8' : '#1a1410';
 
       const txt = document.createElementNS(NS, 'text');
       txt.setAttribute('x', lx);
@@ -538,23 +583,25 @@
       txt.textContent = `${truncate(p, 14)} ${state.minutes[i]}m`;
       svg.appendChild(txt);
 
-      // Chip background — measure after append
-      try {
-        const bb = txt.getBBox();
-        const padX = 8, padY = 4;
-        const rect = document.createElementNS(NS, 'rect');
-        rect.setAttribute('x', bb.x - padX);
-        rect.setAttribute('y', bb.y - padY);
-        rect.setAttribute('width', bb.width + padX * 2);
-        rect.setAttribute('height', bb.height + padY * 2);
-        rect.setAttribute('rx', 6);
-        rect.setAttribute('fill', bg);
-        rect.setAttribute('fill-opacity', '0.92');
-        rect.setAttribute('stroke', state.night ? '#4a3e2a' : '#d8cfb8');
-        rect.setAttribute('stroke-width', '1');
-        rect.setAttribute('pointer-events', 'none');
-        svg.insertBefore(rect, txt);
-      } catch (_) { /* getBBox may fail if not yet rendered */ }
+      // Chip background only when text is outside the clock
+      if (state.textOutside) {
+        try {
+          const bb = txt.getBBox();
+          const padX = 5, padY = 2;
+          const rect = document.createElementNS(NS, 'rect');
+          rect.setAttribute('x', bb.x - padX);
+          rect.setAttribute('y', bb.y - padY);
+          rect.setAttribute('width', bb.width + padX * 2);
+          rect.setAttribute('height', bb.height + padY * 2);
+          rect.setAttribute('rx', 4);
+          rect.setAttribute('fill', bg);
+          rect.setAttribute('fill-opacity', '0.92');
+          rect.setAttribute('stroke', state.night ? '#4a3e2a' : '#d8cfb8');
+          rect.setAttribute('stroke-width', '1');
+          rect.setAttribute('pointer-events', 'none');
+          svg.insertBefore(rect, txt);
+        } catch (_) {}
+      }
 
       cumMin = segEndMin;
     });
@@ -585,6 +632,33 @@
         t2.textContent = fmtHM(state.startMin + tot);
         svg.appendChild(t2);
       }
+    }
+
+    // Lesson-end boundary — draggable to change total duration
+    if (lessonSpan < 360 - 2) {
+      const aEnd = sa + lessonSpan;
+      const [ex0, ey0] = polar(aEnd, ri || 0);
+      const [ex1, ey1] = polar(aEnd, R);
+      const eln = document.createElementNS(NS, 'line');
+      eln.setAttribute('x1', ex0); eln.setAttribute('y1', ey0);
+      eln.setAttribute('x2', ex1); eln.setAttribute('y2', ey1);
+      eln.setAttribute('stroke', state.night ? '#f0e8d8' : '#1a1410');
+      eln.setAttribute('stroke-width', '2.5');
+      eln.setAttribute('stroke-dasharray', '4 3');
+      eln.setAttribute('opacity', '0.6');
+      eln.setAttribute('pointer-events', 'none');
+      svg.appendChild(eln);
+
+      const ehit = document.createElementNS(NS, 'line');
+      ehit.setAttribute('x1', ex0); ehit.setAttribute('y1', ey0);
+      ehit.setAttribute('x2', ex1); ehit.setAttribute('y2', ey1);
+      ehit.setAttribute('stroke', 'transparent');
+      ehit.setAttribute('stroke-width', '24');
+      ehit.setAttribute('pointer-events', 'stroke');
+      ehit.style.cursor = 'grab';
+      ehit.dataset.lessonEnd = '1';
+      ehit.addEventListener('pointerdown', startEndDrag);
+      svg.appendChild(ehit);
     }
 
     // Marks — three independent layers drawn at every applicable position.
@@ -643,26 +717,47 @@
   }
 
   // ---------- drag ----------
+  function pointerAngle(e) {
+    const rect = svg.getBoundingClientRect();
+    const scale = rect.width / 360;
+    const x = e.clientX - rect.left - CX * scale;
+    const y = e.clientY - rect.top - CY * scale;
+    let ang = Math.atan2(y, x) * 180 / Math.PI + 90;
+    if (ang < 0) ang += 360;
+    return ang;
+  }
   function startDrag(e) {
     e.preventDefault();
     const i = Number(e.target.dataset.boundary);
-    state.drag = { i, leftMin: state.minutes[i], rightMin: state.minutes[i+1] };
+    state.drag = { type: 'between', i, leftMin: state.minutes[i], rightMin: state.minutes[i+1] };
+    window.addEventListener('pointermove', onDrag);
+    window.addEventListener('pointerup', endDrag);
+  }
+  function startEndDrag(e) {
+    e.preventDefault();
+    state.drag = { type: 'end' };
     window.addEventListener('pointermove', onDrag);
     window.addEventListener('pointerup', endDrag);
   }
   function onDrag(e) {
     if (!state.drag) return;
-    const rect = svg.getBoundingClientRect();
-    const x = e.clientX - rect.left - CX * (rect.width / 360);
-    const y = e.clientY - rect.top - CY * (rect.height / 360);
-    let ang = Math.atan2(y, x) * 180 / Math.PI + 90; // 0 at top
-    if (ang < 0) ang += 360;
+    const ang = pointerAngle(e);
     const sa = startAngle();
     let rel = ang - sa;
     while (rel < 0) rel += 360;
-    const targetCumMin = (rel / 360) * 60;
 
-    // Boundary index = state.drag.i; cumulative minutes up to (and including) seg i
+    if (state.drag.type === 'end') {
+      let newTotal = (rel / 360) * 60;
+      const minTotal = state.parts.length * 2;
+      if (newTotal < minTotal) newTotal = minTotal;
+      if (newTotal > 360) newTotal = 360;
+      scaleMinutesTo(Math.round(newTotal));
+      renderEndControl();
+      render();
+      return;
+    }
+
+    const targetCumMin = (rel / 360) * 60;
     let cumBefore = 0;
     for (let k = 0; k < state.drag.i; k++) cumBefore += state.minutes[k];
     let newLeft = targetCumMin - cumBefore;
@@ -678,6 +773,18 @@
     state.drag = null;
     window.removeEventListener('pointermove', onDrag);
     window.removeEventListener('pointerup', endDrag);
+    save();
+  }
+
+  function quickStart() {
+    const d = new Date();
+    state.startMin = d.getHours() * 60 + d.getMinutes();
+    $('startTime').value = fmtHM(state.startMin);
+    state.warnedSet = new Set();
+    syncEndFromStartLen();
+    renderEndControl();
+    render();
+    save();
   }
 
   // ---------- audio ----------
@@ -747,20 +854,33 @@
 
   // ---------- init ----------
   function init() {
-    // default start = nu, avrundat ner till heltimme
-    const d = new Date();
-    state.startMin = d.getHours() * 60;
+    load();
+    // If no saved state: default start = current hour
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      const d = new Date();
+      state.startMin = d.getHours() * 60;
+    }
     $('startTime').value = fmtHM(state.startMin);
+    $('titleInput').value = state.title || '';
+    $('partsArea').value = state.parts.join('\n');
     syncEndFromStartLen();
 
-    $('partsArea').addEventListener('input', parseParts);
+    $('titleInput').addEventListener('input', () => {
+      state.title = $('titleInput').value;
+      $('lessonTitle').textContent = state.title;
+      save();
+    });
+    $('quickStartBtn').addEventListener('click', quickStart);
+    $('partsArea').addEventListener('input', () => { parseParts(); save(); });
     $('startTime').addEventListener('input', () => {
       const [h, m] = $('startTime').value.split(':').map(Number);
       if (isNaN(h) || isNaN(m)) return;
       state.startMin = h * 60 + m;
+      state.warnedSet = new Set(); // ny starttid = reset av varningar
       syncEndFromStartLen();
       renderEndControl();
       render();
+      save();
     });
     $('endMode').querySelectorAll('button').forEach(b => {
       b.addEventListener('click', () => setEndMode(b.dataset.mode));
@@ -777,6 +897,7 @@
         const k = p.dataset.toggle;
         state[k] = !state[k];
         render();
+        save();
       });
     });
     $('collapseBtn').addEventListener('click', () => {
@@ -784,7 +905,16 @@
       $('collapseBtn').textContent = document.body.classList.contains('sb-collapsed') ? '›' : '‹';
     });
 
-    setEndMode('end');
+    // Hard reset shortcut
+    window.addEventListener('keydown', (e) => {
+      if (e.altKey && e.shiftKey && (e.key === 'R' || e.key === 'r')) {
+        e.preventDefault();
+        if (confirm('Återställ timern? All sparad data raderas.')) hardReset();
+      }
+    });
+
+    $('lessonTitle').textContent = state.title || '';
+    setEndMode(state.endMode || 'end');
     render();
     setInterval(tick, 1000);
   }
