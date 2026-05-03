@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lektionsklocka</title>
+<style>
+  :root {
+    --bg: #f5efe2;
+    --fg: #2a2520;
+    --panel: #ffffff;
+    --border: #d8cfb8;
+    --muted: #7a6f5a;
+    --accent: #2a2520;
+    --pill: #e8dfc8;
+    --pill-on: #2a2520;
+    --pill-on-fg: #f5efe2;
+    --void: #2a2520;
+  }
+  .night {
+    --bg: #0d0d0d;
+    --fg: #f0e8d8;
+    --panel: #1a1612;
+    --border: #4a3e2a;
+    --muted: #8a7a5a;
+    --accent: #f0e8d8;
+    --pill: #2a2218;
+    --pill-on: #f0e8d8;
+    --pill-on-fg: #0d0d0d;
+    --void: #050505;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; transition: background .3s, color .3s; }
+  body { min-height: 100vh; display: flex; }
+  .app { display: flex; width: 100%; min-height: 100vh; }
+  .sidebar {
+    width: 190px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 16px 12px;
+    position: relative;
+    transition: margin-left .25s ease;
+    overflow-y: auto;
+  }
+  .sidebar.collapsed { margin-left: -190px; }
+  .sidebar h3 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); font-weight: 600; }
+  .seglist { display: flex; flex-direction: column; gap: 4px; }
+  .seglist .row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 6px;
+    font-size: 13px;
+  }
+  .seglist .row.active { background: var(--pill); font-weight: 600; }
+  .seglist .row.past { opacity: .45; }
+  .seglist .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .seglist .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .seglist .min { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+  .collapse-btn {
+    position: absolute; top: 50%; right: -14px;
+    transform: translateY(-50%);
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--panel); color: var(--fg);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    z-index: 5;
+  }
+  .main {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start;
+    padding: 24px 16px;
+    gap: 12px;
+  }
+  .top-time { text-align: center; }
+  .top-time .now { font-size: 56px; font-weight: 200; letter-spacing: -1px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .top-time .left { font-size: 16px; color: var(--muted); margin-top: 4px; transition: opacity .2s; font-variant-numeric: tabular-nums; }
+  .clock-wrap { position: relative; }
+  svg.clock { display: block; user-select: none; touch-action: none; }
+  .toolbar {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 999px; padding: 6px 10px;
+    position: relative;
+  }
+  .toolbar button.icon {
+    background: transparent; border: 0; color: var(--fg);
+    cursor: pointer; font-size: 18px; padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .toolbar button.icon:hover { background: var(--pill); }
+  .warn-dots { display: flex; gap: 4px; padding: 0 6px; border-left: 1px solid var(--border); }
+  .warn-dots .wd {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 1.5px solid var(--border); cursor: pointer;
+    background: transparent;
+  }
+  .warn-dots .wd.on { border-color: var(--accent); background: var(--accent); }
+  .popover {
+    position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 12px;
+    display: none; flex-direction: column; gap: 6px;
+    min-width: 200px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.15);
+    z-index: 10;
+  }
+  .popover.open { display: flex; }
+  .pill {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; border-radius: 999px;
+    background: var(--pill); color: var(--fg);
+    cursor: pointer; font-size: 13px;
+    border: 0;
+  }
+  .pill.on { background: var(--pill-on); color: var(--pill-on-fg); }
+  .controls {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    width: min(360px, 100%);
+  }
+  .controls label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+  .controls input[type=time], .controls input[type=number], .controls textarea {
+    background: var(--bg); color: var(--fg);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 14px; width: 100%;
+    font-family: inherit;
+  }
+  .controls textarea { min-height: 100px; resize: vertical; line-height: 1.4; }
+  .row2 { display: flex; gap: 8px; }
+  .row2 > div { flex: 1; }
+  .mode-toggle { display: flex; gap: 4px; background: var(--bg); border-radius: 8px; padding: 3px; border: 1px solid var(--border); }
+  .mode-toggle button {
+    flex: 1; padding: 6px; border: 0; background: transparent;
+    color: var(--fg); cursor: pointer; border-radius: 6px; font-size: 13px;
+  }
+  .mode-toggle button.on { background: var(--pill-on); color: var(--pill-on-fg); }
+  .feedback { font-size: 12px; color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .flash {
+    position: fixed; inset: 0; pointer-events: none;
+    background: #ffae00; opacity: 0; z-index: 100;
+    transition: opacity .15s;
+  }
+  .flash.on { opacity: .35; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <button class="collapse-btn" id="collapseBtn" title="Dölj panel">‹</button>
+    <h3>Delar</h3>
+    <div class="seglist" id="seglist"></div>
+  </aside>
+
+  <main class="main">
+    <div class="top-time">
+      <div class="now" id="nowText">--:--</div>
+      <div class="left" id="leftText">--:-- kvar</div>
+    </div>
+
+    <div class="clock-wrap">
+      <svg class="clock" id="clock" viewBox="0 0 360 360" width="360" height="360"></svg>
+    </div>
+
+    <div class="toolbar">
+      <button class="icon" id="gearBtn" title="Inställningar">⚙</button>
+      <div class="warn-dots" id="warnDots"></div>
+      <div class="popover" id="popover">
+        <button class="pill" data-toggle="showLeft">Tid kvar <span>•</span></button>
+        <button class="pill" data-toggle="showCenterEnd">Sluttid i mitten <span>•</span></button>
+        <button class="pill" data-toggle="hollow">Ihålig mitt <span>•</span></button>
+        <button class="pill" data-toggle="textOutside">Text utanför <span>•</span></button>
+        <button class="pill" data-toggle="night">Nattläge <span>•</span></button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div>
+        <label>Lektionsdelar (en per rad)</label>
+        <textarea id="partsArea" placeholder="Genomgång&#10;Eget arbete&#10;Avslut"></textarea>
+        <div class="feedback" id="partsFeedback">1 del</div>
+      </div>
+      <div class="row2">
+        <div>
+          <label>Starttid</label>
+          <input type="time" id="startTime">
+        </div>
+        <div>
+          <label id="endLabel">Sluttid</label>
+          <div id="endControl"></div>
+        </div>
+      </div>
+      <div class="mode-toggle" id="endMode">
+        <button data-mode="end" class="on">Sluttid</button>
+        <button data-mode="len">Längd</button>
+      </div>
+      <div class="feedback" id="timeFeedback"></div>
+    </div>
+  </main>
+</div>
+<div class="flash" id="flash"></div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const svg = $('clock');
+  const NS = 'http://www.w3.org/2000/svg';
+  const CX = 180, CY = 180, R = 155, Ri = 65;
+
+  const COLORS_DAY = ['#D4956A','#7BAF7B','#C47A8A','#7A9FC2','#C4A96A','#8A9E7A','#B87A6A','#7AAFAA'];
+  const COLORS_NIGHT = ['#FFB87A','#85DDB0','#FF9AAA','#85C5F0','#FFCF7A','#AADE85','#FFB0A0','#85DDDD'];
+
+  const state = {
+    parts: ['Lektion'],
+    minutes: [45],         // length per part
+    warnings: [false],
+    startMin: 8 * 60,      // start time in minutes
+    endMin: 8 * 60 + 45,   // end time in minutes
+    endMode: 'end',        // 'end' or 'len'
+    showLeft: true,
+    showCenterEnd: true,
+    hollow: true,
+    textOutside: false,
+    night: false,
+    drag: null,
+    warnedSet: new Set(),
+  };
+
+  // ---------- helpers ----------
+  const pad = (n) => String(n).padStart(2, '0');
+  const fmtHM = (mins) => {
+    mins = ((mins % 1440) + 1440) % 1440;
+    return pad(Math.floor(mins/60)) + ':' + pad(Math.floor(mins%60));
+  };
+  const fmtLeft = (mins) => {
+    if (mins < 0) mins = 0;
+    const m = Math.floor(mins);
+    const s = Math.floor((mins - m) * 60);
+    return m + ':' + pad(s);
+  };
+  const polar = (angleDeg, r) => {
+    const a = (angleDeg - 90) * Math.PI / 180;
+    return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+  };
+  const arcPath = (a0, a1, rOuter, rInner) => {
+    // sector from a0 to a1 (degrees), donut if rInner>0
+    if (a1 - a0 >= 359.999) a1 = a0 + 359.999;
+    const large = (a1 - a0) > 180 ? 1 : 0;
+    const [x0, y0] = polar(a0, rOuter);
+    const [x1, y1] = polar(a1, rOuter);
+    if (rInner > 0) {
+      const [x2, y2] = polar(a1, rInner);
+      const [x3, y3] = polar(a0, rInner);
+      return `M ${x0} ${y0} A ${rOuter} ${rOuter} 0 ${large} 1 ${x1} ${y1} L ${x2} ${y2} A ${rInner} ${rInner} 0 ${large} 0 ${x3} ${y3} Z`;
+    }
+    return `M ${CX} ${CY} L ${x0} ${y0} A ${rOuter} ${rOuter} 0 ${large} 1 ${x1} ${y1} Z`;
+  };
+
+  const totalMin = () => state.minutes.reduce((a,b)=>a+b, 0);
+  const startAngle = () => ((state.startMin % 60) / 60) * 360;
+  const colors = () => state.night ? COLORS_NIGHT : COLORS_DAY;
+
+  function nowMinutes() {
+    const d = new Date();
+    return d.getHours()*60 + d.getMinutes() + d.getSeconds()/60;
+  }
+
+  // ---------- input handling ----------
+  function parseParts() {
+    const raw = $('partsArea').value;
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) {
+      state.parts = ['Lektion'];
+    } else {
+      state.parts = lines;
+    }
+    // resize minutes/warnings, distribute current total evenly
+    const tot = totalMin() || 45;
+    const n = state.parts.length;
+    if (state.minutes.length !== n) {
+      const each = Math.max(2, Math.round(tot / n));
+      state.minutes = state.parts.map(() => each);
+      // adjust last to keep total
+      const diff = tot - state.minutes.reduce((a,b)=>a+b,0);
+      state.minutes[n-1] = Math.max(2, state.minutes[n-1] + diff);
+      state.warnings = state.parts.map((_, i) => state.warnings[i] || false);
+    }
+    $('partsFeedback').textContent = state.parts.length + (state.parts.length === 1 ? ' del' : ' delar');
+    syncEndFromStartLen();
+    render();
+  }
+
+  function syncEndFromStartLen() {
+    state.endMin = state.startMin + totalMin();
+  }
+
+  function setEndMode(m) {
+    state.endMode = m;
+    $('endMode').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+    $('endLabel').textContent = m === 'end' ? 'Sluttid' : 'Längd (min)';
+    renderEndControl();
+  }
+
+  function renderEndControl() {
+    const c = $('endControl');
+    c.innerHTML = '';
+    if (state.endMode === 'end') {
+      const inp = document.createElement('input');
+      inp.type = 'time';
+      inp.value = fmtHM(state.endMin);
+      inp.addEventListener('input', () => {
+        const [h, m] = inp.value.split(':').map(Number);
+        if (isNaN(h) || isNaN(m)) return;
+        let end = h*60 + m;
+        if (end <= state.startMin) end += 24*60; // next day if before
+        const diff = end - state.startMin;
+        if (diff < state.parts.length * 2) return;
+        scaleMinutesTo(diff);
+        render();
+      });
+      c.appendChild(inp);
+    } else {
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.min = state.parts.length * 2;
+      inp.value = totalMin();
+      inp.addEventListener('input', () => {
+        const v = Number(inp.value);
+        if (!v || v < state.parts.length * 2) return;
+        scaleMinutesTo(v);
+        render();
+      });
+      c.appendChild(inp);
+    }
+  }
+
+  function scaleMinutesTo(newTotal) {
+    const old = totalMin();
+    if (old <= 0) {
+      const each = Math.max(2, Math.round(newTotal / state.parts.length));
+      state.minutes = state.parts.map(() => each);
+    } else {
+      const factor = newTotal / old;
+      state.minutes = state.minutes.map(m => Math.max(2, m * factor));
+    }
+    // round and fix rounding drift
+    state.minutes = state.minutes.map(m => Math.round(m));
+    const drift = newTotal - state.minutes.reduce((a,b)=>a+b,0);
+    state.minutes[state.minutes.length-1] = Math.max(2, state.minutes[state.minutes.length-1] + drift);
+    syncEndFromStartLen();
+  }
+
+  // ---------- toggles ----------
+  function syncToggles() {
+    document.querySelectorAll('.pill[data-toggle]').forEach(p => {
+      const k = p.dataset.toggle;
+      p.classList.toggle('on', !!state[k]);
+    });
+    document.documentElement.classList.toggle('night', state.night);
+    document.body.classList.toggle('night', state.night);
+    $('leftText').style.opacity = state.showLeft ? '1' : '0';
+  }
+
+  // ---------- render ----------
+  function render() {
+    syncToggles();
+    renderClock();
+    renderSidebar();
+    renderWarnDots();
+    renderTimeFeedback();
+    tick(); // also updates now-text
+  }
+
+  function renderTimeFeedback() {
+    const t = totalMin();
+    $('timeFeedback').textContent = `${t} min → slutar ${fmtHM(state.startMin + t)}`;
+  }
+
+  function renderWarnDots() {
+    const c = $('warnDots');
+    c.innerHTML = '';
+    state.parts.forEach((p, i) => {
+      const b = document.createElement('button');
+      b.className = 'wd' + (state.warnings[i] ? ' on' : '');
+      b.title = `2-min varning för "${p}"`;
+      b.addEventListener('click', () => {
+        state.warnings[i] = !state.warnings[i];
+        renderWarnDots();
+      });
+      c.appendChild(b);
+    });
+  }
+
+  function renderSidebar() {
+    const c = $('seglist');
+    c.innerHTML = '';
+    const cs = colors();
+    const elapsed = elapsedMin();
+    let cum = 0;
+    state.parts.forEach((p, i) => {
+      const segEnd = cum + state.minutes[i];
+      const isActive = elapsed >= cum && elapsed < segEnd;
+      const isPast = elapsed >= segEnd;
+      const row = document.createElement('div');
+      row.className = 'row' + (isActive ? ' active' : '') + (isPast ? ' past' : '');
+      row.innerHTML = `<span class="dot" style="background:${cs[i % cs.length]}"></span><span class="name">${escapeHtml(p)}</span><span class="min">${state.minutes[i]}m</span>`;
+      c.appendChild(row);
+      cum = segEnd;
+    });
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function elapsedMin() {
+    return nowMinutes() - state.startMin;
+  }
+
+  function renderClock() {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    const cs = colors();
+    const tot = totalMin();
+    const sa = startAngle();
+    const lessonSpan = (tot / 60) * 360; // can exceed 360
+    const elapsed = elapsedMin();
+    const elapsedSpan = Math.max(0, Math.min(tot, elapsed)) / 60 * 360;
+    const ri = state.hollow ? Ri : 0;
+
+    // Void zone (after lesson back to start) — only if lessonSpan < 360
+    if (lessonSpan < 360) {
+      const voidStart = sa + lessonSpan;
+      const voidEnd = sa + 360;
+      const p = document.createElementNS(NS, 'path');
+      p.setAttribute('d', arcPath(voidStart, voidEnd, R, ri));
+      p.setAttribute('fill', state.night ? '#050505' : '#2a2520');
+      svg.appendChild(p);
+    }
+
+    // Segments
+    let cumMin = 0;
+    const bg = state.night ? '#0d0d0d' : '#f5efe2';
+    const dimSuffix = state.night ? '55' : '40';
+    const grayPast = state.night ? '#3a3530' : '#C8C5BE';
+
+    state.parts.forEach((p, i) => {
+      const segStartMin = cumMin;
+      const segEndMin = cumMin + state.minutes[i];
+      const a0 = sa + (segStartMin / 60) * 360;
+      const a1 = sa + (segEndMin / 60) * 360;
+      const baseColor = cs[i % cs.length];
+
+      // Determine state
+      const isPast = elapsed >= segEndMin;
+      const isActive = elapsed >= segStartMin && elapsed < segEndMin;
+
+      let fill;
+      if (isPast) fill = grayPast;
+      else if (isActive) fill = baseColor;
+      else fill = baseColor + dimSuffix;
+
+      // For active segment, render past part gray and remaining colored
+      if (isActive) {
+        const splitAngle = sa + (elapsed / 60) * 360;
+        const pastP = document.createElementNS(NS, 'path');
+        pastP.setAttribute('d', arcPath(a0, splitAngle, R, ri));
+        pastP.setAttribute('fill', grayPast);
+        svg.appendChild(pastP);
+
+        const liveP = document.createElementNS(NS, 'path');
+        liveP.setAttribute('d', arcPath(splitAngle, a1, R, ri));
+        liveP.setAttribute('fill', baseColor);
+        svg.appendChild(liveP);
+      } else {
+        const path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', arcPath(a0, a1, R, ri));
+        path.setAttribute('fill', fill);
+        svg.appendChild(path);
+      }
+
+      // Separator line at a0 (skip first if it equals start of nothing)
+      if (i > 0) {
+        const [x0, y0] = polar(a0, ri || 0);
+        const [x1, y1] = polar(a0, R);
+        const ln = document.createElementNS(NS, 'line');
+        ln.setAttribute('x1', x0); ln.setAttribute('y1', y0);
+        ln.setAttribute('x2', x1); ln.setAttribute('y2', y1);
+        ln.setAttribute('stroke', bg);
+        ln.setAttribute('stroke-width', '2');
+        svg.appendChild(ln);
+      }
+
+      // Label
+      const midAngle = (a0 + a1) / 2;
+      let lx, ly, fillText;
+      if (state.textOutside) {
+        [lx, ly] = polar(midAngle, R + 22);
+      } else {
+        const rText = ri > 0 ? (R + ri) / 2 : R / 2;
+        [lx, ly] = polar(midAngle, rText);
+      }
+      if (isPast) fillText = state.night ? '#5a5045' : '#9a8f7a';
+      else if (isActive) fillText = '#ffffff';
+      else fillText = baseColor;
+
+      const txt = document.createElementNS(NS, 'text');
+      txt.setAttribute('x', lx);
+      txt.setAttribute('y', ly);
+      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('dominant-baseline', 'middle');
+      txt.setAttribute('font-size', '12');
+      txt.setAttribute('font-weight', '600');
+      txt.setAttribute('fill', fillText);
+      txt.textContent = `${truncate(p, 14)} ${state.minutes[i]}m`;
+      svg.appendChild(txt);
+
+      cumMin = segEndMin;
+    });
+
+    // Inner circle (hollow center)
+    if (state.hollow) {
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('cx', CX); c.setAttribute('cy', CY);
+      c.setAttribute('r', Ri - 3);
+      c.setAttribute('fill', bg);
+      svg.appendChild(c);
+
+      if (state.showCenterEnd) {
+        const t1 = document.createElementNS(NS, 'text');
+        t1.setAttribute('x', CX); t1.setAttribute('y', CY - 8);
+        t1.setAttribute('text-anchor', 'middle');
+        t1.setAttribute('font-size', '11');
+        t1.setAttribute('fill', state.night ? '#8a7a5a' : '#7a6f5a');
+        t1.textContent = 'slutar';
+        svg.appendChild(t1);
+
+        const t2 = document.createElementNS(NS, 'text');
+        t2.setAttribute('x', CX); t2.setAttribute('y', CY + 12);
+        t2.setAttribute('text-anchor', 'middle');
+        t2.setAttribute('font-size', '20');
+        t2.setAttribute('font-weight', '600');
+        t2.setAttribute('fill', state.night ? '#f0e8d8' : '#2a2520');
+        t2.textContent = fmtHM(state.startMin + tot);
+        svg.appendChild(t2);
+      }
+    }
+
+    // Drag handles between segments
+    cumMin = 0;
+    for (let i = 0; i < state.parts.length - 1; i++) {
+      cumMin += state.minutes[i];
+      const a = sa + (cumMin / 60) * 360;
+      const [hx, hy] = polar(a, (R + (ri || 0)) / 2);
+      const handle = document.createElementNS(NS, 'circle');
+      handle.setAttribute('cx', hx); handle.setAttribute('cy', hy);
+      handle.setAttribute('r', 7);
+      handle.setAttribute('fill', bg);
+      handle.setAttribute('stroke', state.night ? '#f0e8d8' : '#2a2520');
+      handle.setAttribute('stroke-width', '1.5');
+      handle.style.cursor = 'grab';
+      handle.dataset.boundary = i;
+      handle.addEventListener('pointerdown', startDrag);
+      svg.appendChild(handle);
+    }
+
+    // Pointer arm
+    if (elapsed >= 0 && elapsed <= tot) {
+      const [tx, ty] = polar(sa + elapsedSpan, R - 4);
+      const [bx1, by1] = polar(sa + elapsedSpan + 90, 5);
+      const [bx2, by2] = polar(sa + elapsedSpan - 90, 5);
+      // Find current color
+      let current = colors()[0];
+      let cm = 0;
+      for (let i = 0; i < state.parts.length; i++) {
+        if (elapsed >= cm && elapsed < cm + state.minutes[i]) { current = colors()[i % colors().length]; break; }
+        cm += state.minutes[i];
+      }
+      const poly = document.createElementNS(NS, 'polygon');
+      poly.setAttribute('points', `${tx},${ty} ${bx1},${by1} ${bx2},${by2}`);
+      poly.setAttribute('fill', current);
+      svg.appendChild(poly);
+      const piv = document.createElementNS(NS, 'circle');
+      piv.setAttribute('cx', CX); piv.setAttribute('cy', CY); piv.setAttribute('r', 5);
+      piv.setAttribute('fill', current);
+      svg.appendChild(piv);
+    }
+  }
+
+  function truncate(s, n) {
+    return s.length > n ? s.slice(0, n - 1) + '…' : s;
+  }
+
+  // ---------- drag ----------
+  function startDrag(e) {
+    e.preventDefault();
+    const i = Number(e.target.dataset.boundary);
+    state.drag = { i, leftMin: state.minutes[i], rightMin: state.minutes[i+1] };
+    window.addEventListener('pointermove', onDrag);
+    window.addEventListener('pointerup', endDrag);
+  }
+  function onDrag(e) {
+    if (!state.drag) return;
+    const rect = svg.getBoundingClientRect();
+    const x = e.clientX - rect.left - CX * (rect.width / 360);
+    const y = e.clientY - rect.top - CY * (rect.height / 360);
+    let ang = Math.atan2(y, x) * 180 / Math.PI + 90; // 0 at top
+    if (ang < 0) ang += 360;
+    const sa = startAngle();
+    let rel = ang - sa;
+    while (rel < 0) rel += 360;
+    const targetCumMin = (rel / 360) * 60;
+
+    // Boundary index = state.drag.i; cumulative minutes up to (and including) seg i
+    let cumBefore = 0;
+    for (let k = 0; k < state.drag.i; k++) cumBefore += state.minutes[k];
+    let newLeft = targetCumMin - cumBefore;
+    const pair = state.drag.leftMin + state.drag.rightMin;
+    newLeft = Math.max(2, Math.min(pair - 2, newLeft));
+    state.minutes[state.drag.i] = Math.round(newLeft);
+    state.minutes[state.drag.i + 1] = pair - Math.round(newLeft);
+    syncEndFromStartLen();
+    renderEndControl();
+    render();
+  }
+  function endDrag() {
+    state.drag = null;
+    window.removeEventListener('pointermove', onDrag);
+    window.removeEventListener('pointerup', endDrag);
+  }
+
+  // ---------- audio ----------
+  let audioCtx = null;
+  function beep() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.type = 'sine';
+      o.frequency.setValueAtTime(880, audioCtx.currentTime);
+      o.frequency.linearRampToValueAtTime(440, audioCtx.currentTime + 0.6);
+      g.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.7);
+      o.start();
+      o.stop(audioCtx.currentTime + 0.7);
+    } catch (e) {}
+  }
+  function flash() {
+    const f = $('flash');
+    f.classList.add('on');
+    setTimeout(() => f.classList.remove('on'), 400);
+  }
+
+  function checkWarnings() {
+    const elapsed = elapsedMin();
+    let cum = 0;
+    state.parts.forEach((p, i) => {
+      const segEnd = cum + state.minutes[i];
+      if (state.warnings[i]) {
+        const warnAt = segEnd - 2;
+        const key = `w-${i}-${state.startMin}-${segEnd}`;
+        if (elapsed >= warnAt && elapsed < warnAt + 1/60 && !state.warnedSet.has(key)) {
+          state.warnedSet.add(key);
+          beep();
+          flash();
+        }
+      }
+      cum = segEnd;
+    });
+  }
+
+  // ---------- tick ----------
+  function tick() {
+    const now = new Date();
+    $('nowText').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    const tot = totalMin();
+    const left = (state.startMin + tot) - nowMinutes();
+    $('leftText').textContent = (left > 0 ? fmtLeft(left) + ' kvar' : 'klart');
+    renderClock();
+    renderSidebar();
+    checkWarnings();
+  }
+
+  // ---------- init ----------
+  function init() {
+    // default start = nu, avrundat ner till heltimme
+    const d = new Date();
+    state.startMin = d.getHours() * 60;
+    $('startTime').value = fmtHM(state.startMin);
+    syncEndFromStartLen();
+
+    $('partsArea').addEventListener('input', parseParts);
+    $('startTime').addEventListener('input', () => {
+      const [h, m] = $('startTime').value.split(':').map(Number);
+      if (isNaN(h) || isNaN(m)) return;
+      state.startMin = h * 60 + m;
+      syncEndFromStartLen();
+      renderEndControl();
+      render();
+    });
+    $('endMode').querySelectorAll('button').forEach(b => {
+      b.addEventListener('click', () => setEndMode(b.dataset.mode));
+    });
+    $('gearBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      $('popover').classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.toolbar')) $('popover').classList.remove('open');
+    });
+    document.querySelectorAll('.pill[data-toggle]').forEach(p => {
+      p.addEventListener('click', () => {
+        const k = p.dataset.toggle;
+        state[k] = !state[k];
+        render();
+      });
+    });
+    $('collapseBtn').addEventListener('click', () => {
+      const sb = $('sidebar');
+      sb.classList.toggle('collapsed');
+      $('collapseBtn').textContent = sb.classList.contains('collapsed') ? '›' : '‹';
+    });
+
+    setEndMode('end');
+    render();
+    setInterval(tick, 1000);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
