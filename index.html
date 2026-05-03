@@ -43,7 +43,7 @@
     overflow-y: auto;
   }
   body.sb-collapsed .sidebar { margin-left: -190px; }
-  .sidebar h3 { margin: 0 0 14px; font-size: 15px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); font-weight: 700; }
+  .sidebar h3 { margin: 0 0 14px; font-size: 15px; color: var(--fg); font-weight: 700; text-transform: none; letter-spacing: 0; padding: 0 10px; }
   .seglist { display: flex; flex-direction: column; gap: 4px; }
   .seglist .row {
     display: flex; align-items: center; gap: 10px;
@@ -95,11 +95,13 @@
   .toolbar button.icon:hover { background: var(--pill); }
   .warn-dots { display: flex; gap: 4px; padding: 0 6px; border-left: 1px solid var(--border); }
   .warn-dots .wd {
-    width: 14px; height: 14px; border-radius: 50%;
-    border: 1.5px solid var(--border); cursor: pointer;
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid currentColor; cursor: pointer;
     background: transparent;
+    color: var(--border);
+    padding: 0;
   }
-  .warn-dots .wd.on { border-color: var(--accent); background: var(--accent); }
+  .warn-dots .wd.on { background: currentColor; }
   .popover {
     position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
     background: var(--panel); border: 1px solid var(--border);
@@ -394,10 +396,12 @@
   function renderWarnDots() {
     const c = $('warnDots');
     c.innerHTML = '';
+    const cs = colors();
     state.parts.forEach((p, i) => {
       const b = document.createElement('button');
       b.className = 'wd' + (state.warnings[i] ? ' on' : '');
       b.title = `2-min varning för "${p}"`;
+      b.style.color = cs[i % cs.length];
       b.addEventListener('click', () => {
         state.warnings[i] = !state.warnings[i];
         renderWarnDots();
@@ -530,8 +534,27 @@
       txt.setAttribute('font-size', '15');
       txt.setAttribute('font-weight', '700');
       txt.setAttribute('fill', fillText);
+      txt.setAttribute('pointer-events', 'none');
       txt.textContent = `${truncate(p, 14)} ${state.minutes[i]}m`;
       svg.appendChild(txt);
+
+      // Chip background — measure after append
+      try {
+        const bb = txt.getBBox();
+        const padX = 8, padY = 4;
+        const rect = document.createElementNS(NS, 'rect');
+        rect.setAttribute('x', bb.x - padX);
+        rect.setAttribute('y', bb.y - padY);
+        rect.setAttribute('width', bb.width + padX * 2);
+        rect.setAttribute('height', bb.height + padY * 2);
+        rect.setAttribute('rx', 6);
+        rect.setAttribute('fill', bg);
+        rect.setAttribute('fill-opacity', '0.92');
+        rect.setAttribute('stroke', state.night ? '#4a3e2a' : '#d8cfb8');
+        rect.setAttribute('stroke-width', '1');
+        rect.setAttribute('pointer-events', 'none');
+        svg.insertBefore(rect, txt);
+      } catch (_) { /* getBBox may fail if not yet rendered */ }
 
       cumMin = segEndMin;
     });
@@ -564,47 +587,41 @@
       }
     }
 
-    // Marks (clock minute/5/15 marks) — drawn on real clock positions, not lesson-relative
-    if (state.showMin || state.showFive || state.showQuarter) {
-      const markColor = state.night ? '#f0e8d8' : '#1a1410';
-      for (let m = 0; m < 60; m++) {
-        const isQuarter = (m % 15) === 0;
-        const isFive = (m % 5) === 0;
-        let len, w;
-        if (isQuarter) {
-          if (!state.showQuarter) continue;
-          len = 14; w = 2.5;
-        } else if (isFive) {
-          if (!state.showFive) continue;
-          len = 8; w = 1.8;
-        } else {
-          if (!state.showMin) continue;
-          len = 4; w = 1;
-        }
-        const ang = (m / 60) * 360;
-        const [mx0, my0] = polar(ang, R);
-        const [mx1, my1] = polar(ang, R - len);
-        const ml = document.createElementNS(NS, 'line');
-        ml.setAttribute('x1', mx0); ml.setAttribute('y1', my0);
-        ml.setAttribute('x2', mx1); ml.setAttribute('y2', my1);
-        ml.setAttribute('stroke', markColor);
-        ml.setAttribute('stroke-width', w);
-        ml.setAttribute('stroke-linecap', 'round');
-        ml.setAttribute('opacity', isQuarter ? '0.85' : isFive ? '0.65' : '0.4');
-        ml.setAttribute('pointer-events', 'none');
-        svg.appendChild(ml);
-      }
+    // Marks — three independent layers drawn at every applicable position.
+    // Order: minute (shortest, drawn first) → 5 → quarter (longest, drawn last on top).
+    const markColor = state.night ? '#f0e8d8' : '#1a1410';
+    const drawMark = (ang, len, w, op) => {
+      const [mx0, my0] = polar(ang, R);
+      const [mx1, my1] = polar(ang, R - len);
+      const ml = document.createElementNS(NS, 'line');
+      ml.setAttribute('x1', mx0); ml.setAttribute('y1', my0);
+      ml.setAttribute('x2', mx1); ml.setAttribute('y2', my1);
+      ml.setAttribute('stroke', markColor);
+      ml.setAttribute('stroke-width', w);
+      ml.setAttribute('stroke-linecap', 'round');
+      ml.setAttribute('opacity', op);
+      ml.setAttribute('pointer-events', 'none');
+      svg.appendChild(ml);
+    };
+    if (state.showMin) {
+      for (let m = 0; m < 60; m++) drawMark((m/60)*360, 5, 1, 0.45);
+    }
+    if (state.showFive) {
+      for (let m = 0; m < 60; m += 5) drawMark((m/60)*360, 11, 1.8, 0.7);
+    }
+    if (state.showQuarter) {
+      for (let m = 0; m < 60; m += 15) drawMark((m/60)*360, 18, 3, 0.95);
     }
 
     // Pointer arm — pointy spike from inner edge out to outer edge.
     // Does NOT extend into the center (so sluttid in mitten remains synlig).
     if (elapsed >= 0 && elapsed <= tot) {
       const ang = sa + elapsedSpan;
-      const innerR = ri > 0 ? ri + 4 : 18;
-      const tipR = R - 1;
+      const innerR = ri > 0 ? ri - 4 : 14;
+      const tipR = R + 2;
       const [tx, ty] = polar(ang, tipR);
-      // Pointy spike: narrow base at innerR, sharp tip at tipR
-      const baseSpread = 3.2; // degrees on each side at base
+      // Pointy spike: wider base at innerR, sharp tip at tipR
+      const baseSpread = 5.0; // degrees on each side at base
       const [bx1, by1] = polar(ang + baseSpread, innerR);
       const [bx2, by2] = polar(ang - baseSpread, innerR);
 
@@ -717,7 +734,12 @@
     $('nowText').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
     const tot = totalMin();
     const left = (state.startMin + tot) - nowMinutes();
-    $('leftText').textContent = (left > 0 ? fmtLeft(left) + ' kvar' : 'klart');
+    if (left <= 0) {
+      $('leftText').textContent = 'klart';
+    } else {
+      const m = Math.ceil(left);
+      $('leftText').textContent = m === 1 ? '1 minut kvar' : `${m} minuter kvar`;
+    }
     renderClock();
     renderSidebar();
     checkWarnings();
