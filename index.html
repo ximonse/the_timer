@@ -46,15 +46,15 @@
   .sidebar h3 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); font-weight: 600; }
   .seglist { display: flex; flex-direction: column; gap: 4px; }
   .seglist .row {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 8px; border-radius: 6px;
-    font-size: 13px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    font-size: 15px;
   }
   .seglist .row.active { background: var(--pill); font-weight: 600; }
   .seglist .row.past { opacity: .45; }
-  .seglist .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .seglist .dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
   .seglist .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .seglist .min { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+  .seglist .min { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 500; }
   .collapse-btn {
     position: absolute; top: 50%; right: -14px;
     transform: translateY(-50%);
@@ -75,10 +75,10 @@
     gap: 12px;
   }
   .top-time { text-align: center; }
-  .top-time .now { font-size: 56px; font-weight: 200; letter-spacing: -1px; line-height: 1; font-variant-numeric: tabular-nums; }
-  .top-time .left { font-size: 16px; color: var(--muted); margin-top: 4px; transition: opacity .2s; font-variant-numeric: tabular-nums; }
+  .top-time .now { font-size: 72px; font-weight: 200; letter-spacing: -2px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .top-time .left { font-size: 20px; color: var(--muted); margin-top: 6px; transition: opacity .2s; font-variant-numeric: tabular-nums; font-weight: 500; }
   .clock-wrap { position: relative; }
-  svg.clock { display: block; user-select: none; touch-action: none; }
+  svg.clock { display: block; user-select: none; touch-action: none; width: min(70vh, 90vw); height: min(70vh, 90vw); max-width: 640px; max-height: 640px; }
   .toolbar {
     display: flex; align-items: center; gap: 8px;
     background: var(--panel); border: 1px solid var(--border);
@@ -174,6 +174,7 @@
         <button class="pill" data-toggle="hollow">Ihålig mitt <span>•</span></button>
         <button class="pill" data-toggle="textOutside">Text utanför <span>•</span></button>
         <button class="pill" data-toggle="night">Nattläge <span>•</span></button>
+        <button class="pill" data-toggle="showControls">Visa inställningar <span>•</span></button>
       </div>
     </div>
 
@@ -210,8 +211,8 @@
   const NS = 'http://www.w3.org/2000/svg';
   const CX = 180, CY = 180, R = 155, Ri = 65;
 
-  const COLORS_DAY = ['#D4956A','#7BAF7B','#C47A8A','#7A9FC2','#C4A96A','#8A9E7A','#B87A6A','#7AAFAA'];
-  const COLORS_NIGHT = ['#FFB87A','#85DDB0','#FF9AAA','#85C5F0','#FFCF7A','#AADE85','#FFB0A0','#85DDDD'];
+  const COLORS_DAY = ['#E07A38','#3FA864','#C95A6E','#3F7FB8','#D89E3A','#6FA055','#A8553F','#3FA39C'];
+  const COLORS_NIGHT = ['#FFA050','#5FE0A0','#FF7A92','#5FB0F5','#FFC650','#9FE05F','#FF9078','#5FD8D8'];
 
   const state = {
     parts: ['Lektion'],
@@ -225,6 +226,7 @@
     hollow: true,
     textOutside: false,
     night: false,
+    showControls: true,
     drag: null,
     warnedSet: new Set(),
   };
@@ -362,6 +364,7 @@
     document.documentElement.classList.toggle('night', state.night);
     document.body.classList.toggle('night', state.night);
     $('leftText').style.opacity = state.showLeft ? '1' : '0';
+    document.querySelector('.controls').style.display = state.showControls ? 'flex' : 'none';
   }
 
   // ---------- render ----------
@@ -511,8 +514,8 @@
       txt.setAttribute('y', ly);
       txt.setAttribute('text-anchor', 'middle');
       txt.setAttribute('dominant-baseline', 'middle');
-      txt.setAttribute('font-size', '12');
-      txt.setAttribute('font-weight', '600');
+      txt.setAttribute('font-size', '15');
+      txt.setAttribute('font-weight', '700');
       txt.setAttribute('fill', fillText);
       txt.textContent = `${truncate(p, 14)} ${state.minutes[i]}m`;
       svg.appendChild(txt);
@@ -566,25 +569,49 @@
       svg.appendChild(handle);
     }
 
-    // Pointer arm
+    // Pointer arm — high-contrast classic clock hand, ends inside text band
     if (elapsed >= 0 && elapsed <= tot) {
-      const [tx, ty] = polar(sa + elapsedSpan, R - 4);
-      const [bx1, by1] = polar(sa + elapsedSpan + 90, 5);
-      const [bx2, by2] = polar(sa + elapsedSpan - 90, 5);
-      // Find current color
-      let current = colors()[0];
-      let cm = 0;
-      for (let i = 0; i < state.parts.length; i++) {
-        if (elapsed >= cm && elapsed < cm + state.minutes[i]) { current = colors()[i % colors().length]; break; }
-        cm += state.minutes[i];
-      }
-      const poly = document.createElementNS(NS, 'polygon');
-      poly.setAttribute('points', `${tx},${ty} ${bx1},${by1} ${bx2},${by2}`);
-      poly.setAttribute('fill', current);
-      svg.appendChild(poly);
+      // Tip stops short so it never overlaps segment labels
+      const labelR = state.textOutside ? R - 8 : (ri > 0 ? (R + ri) / 2 - 18 : R / 2 - 18);
+      const tipR = Math.max(ri + 14, labelR);
+      const [tx, ty] = polar(sa + elapsedSpan, tipR);
+      const dark = state.night ? '#f0e8d8' : '#1a1410';
+      const light = state.night ? '#0d0d0d' : '#ffffff';
+
+      // White/black halo line (outer stroke)
+      const halo = document.createElementNS(NS, 'line');
+      halo.setAttribute('x1', CX); halo.setAttribute('y1', CY);
+      halo.setAttribute('x2', tx); halo.setAttribute('y2', ty);
+      halo.setAttribute('stroke', light);
+      halo.setAttribute('stroke-width', '6');
+      halo.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(halo);
+
+      // Dark core line on top
+      const core = document.createElementNS(NS, 'line');
+      core.setAttribute('x1', CX); core.setAttribute('y1', CY);
+      core.setAttribute('x2', tx); core.setAttribute('y2', ty);
+      core.setAttribute('stroke', dark);
+      core.setAttribute('stroke-width', '3');
+      core.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(core);
+
+      // Tip dot
+      const tip = document.createElementNS(NS, 'circle');
+      tip.setAttribute('cx', tx); tip.setAttribute('cy', ty); tip.setAttribute('r', 6);
+      tip.setAttribute('fill', dark);
+      tip.setAttribute('stroke', light);
+      tip.setAttribute('stroke-width', '2');
+      svg.appendChild(tip);
+
+      // Pivot
+      const pivBg = document.createElementNS(NS, 'circle');
+      pivBg.setAttribute('cx', CX); pivBg.setAttribute('cy', CY); pivBg.setAttribute('r', 8);
+      pivBg.setAttribute('fill', light);
+      svg.appendChild(pivBg);
       const piv = document.createElementNS(NS, 'circle');
       piv.setAttribute('cx', CX); piv.setAttribute('cy', CY); piv.setAttribute('r', 5);
-      piv.setAttribute('fill', current);
+      piv.setAttribute('fill', dark);
       svg.appendChild(piv);
     }
   }
