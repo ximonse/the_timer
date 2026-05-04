@@ -794,6 +794,31 @@
     defs.appendChild(grad);
     return `url(#${id})`;
   }
+  function createPsychedelicEdgeFilter(defs) {
+    const filter = document.createElementNS(NS, 'filter');
+    filter.setAttribute('id', 'psy-edge-soft');
+    filter.setAttribute('x', '-8%');
+    filter.setAttribute('y', '-8%');
+    filter.setAttribute('width', '116%');
+    filter.setAttribute('height', '116%');
+
+    const blur = document.createElementNS(NS, 'feGaussianBlur');
+    blur.setAttribute('in', 'SourceGraphic');
+    blur.setAttribute('stdDeviation', '0.85');
+    blur.setAttribute('result', 'soft');
+
+    const merge = document.createElementNS(NS, 'feMerge');
+    const m1 = document.createElementNS(NS, 'feMergeNode');
+    m1.setAttribute('in', 'soft');
+    const m2 = document.createElementNS(NS, 'feMergeNode');
+    m2.setAttribute('in', 'SourceGraphic');
+
+    merge.appendChild(m1);
+    merge.appendChild(m2);
+    filter.appendChild(blur);
+    filter.appendChild(merge);
+    defs.appendChild(filter);
+  }
   function tv() {
     const p = state.palette || 'sansad';
     const d = state.dark && p !== 'psychedelic';
@@ -1082,7 +1107,11 @@
     const { bg, dimSuffix, grayPast, mark: markColor, centerMain, centerMuted, handDark, handLight, chip: chipFill } = tv();
     const labelDefer = [];
     const defs = isPsychedelic ? document.createElementNS(NS, 'defs') : null;
-    if (defs) svg.appendChild(defs);
+    const segFilter = isPsychedelic ? 'url(#psy-edge-soft)' : null;
+    if (defs) {
+      createPsychedelicEdgeFilter(defs);
+      svg.appendChild(defs);
+    }
 
     state.parts.forEach((p, i) => {
       const segStartMin = cumMin;
@@ -1116,6 +1145,7 @@
           'fill',
           baseColor + dimSuffix
         );
+        if (segFilter) pastP.setAttribute('filter', segFilter);
         svg.appendChild(pastP);
 
         const liveP = document.createElementNS(NS, 'path');
@@ -1126,11 +1156,13 @@
             ? createPsychedelicGradient(defs, `psy-grad-${i}-active-live`, splitAngle, a1, baseColor, nextColor, true)
             : baseColor
         );
+        if (segFilter) liveP.setAttribute('filter', segFilter);
         svg.appendChild(liveP);
       } else {
         const path = document.createElementNS(NS, 'path');
         path.setAttribute('d', arcPath(a0, a1, R, ri));
         path.setAttribute('fill', fill);
+        if (segFilter) path.setAttribute('filter', segFilter);
         svg.appendChild(path);
       }
 
