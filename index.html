@@ -1026,16 +1026,16 @@
       const isActive = elapsed >= segStartMin && elapsed < segEndMin;
 
       let fill;
-      if (isPast) fill = grayPast;
+      if (isPast) fill = baseColor + dimSuffix;
       else if (isActive) fill = baseColor;
-      else fill = baseColor + dimSuffix;
+      else fill = baseColor;
 
-      // For active segment, render past part gray and remaining colored
+      // For active segment, render elapsed part dimmed and remaining full color
       if (isActive) {
         const splitAngle = sa + (elapsed / 60) * 360;
         const pastP = document.createElementNS(NS, 'path');
         pastP.setAttribute('d', arcPath(a0, splitAngle, R, ri));
-        pastP.setAttribute('fill', grayPast);
+        pastP.setAttribute('fill', baseColor + dimSuffix);
         svg.appendChild(pastP);
 
         const liveP = document.createElementNS(NS, 'path');
