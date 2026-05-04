@@ -1103,7 +1103,7 @@
       else if (isActive) fill = baseColor;
       else {
         fill = isPsychedelic
-          ? createPsychedelicGradient(defs, `psy-grad-${i}-live`, a0, a1, baseColor, nextColor, false)
+          ? createPsychedelicGradient(defs, `psy-grad-${i}-live`, a0, a1, baseColor, nextColor, true)
           : baseColor;
       }
 
@@ -1123,7 +1123,7 @@
         liveP.setAttribute(
           'fill',
           isPsychedelic
-            ? createPsychedelicGradient(defs, `psy-grad-${i}-active-live`, splitAngle, a1, baseColor, nextColor, false)
+            ? createPsychedelicGradient(defs, `psy-grad-${i}-active-live`, splitAngle, a1, baseColor, nextColor, true)
             : baseColor
         );
         svg.appendChild(liveP);
