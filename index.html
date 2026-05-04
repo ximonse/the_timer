@@ -226,7 +226,7 @@
   .seglist .row.past { opacity: .45; }
   .seglist .dot { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
   .seglist .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .seglist .min { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 32px; font-weight: 500; }
+  .seglist .min { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 32px; font-weight: 500; min-width: 6ch; text-align: right; flex-shrink: 0; }
   .seglist .note { color: var(--muted); font-size: 22px; line-height: 1.2; padding: 0 12px 8px 50px; white-space: pre-wrap; }
   .seglist .infobox {
     margin-top: 18px; padding: 16px 18px; border-radius: 12px;
@@ -630,6 +630,9 @@
   const COLORS_PSY    = ['#ff00ff','#ff0000','#ff8800','#ffff00','#00ff44','#00ffff','#4400ff','#ff00aa'];
   const LABELS_MLPP_DAY = ['#86689e','#b15f8a','#c45e87','#5d8cb4','#4c7da7','#83639a','#bd4f7c','#4d89af'];
   const LABELS_CLEAR_DAY = ['#7d2c60','#b43346','#d5771f','#c4621b','#2f6674','#9f3d7a','#cf3a4e','#cb7222'];
+  const LABELS_SANSAD_DARK = ['#e07a5f','#6970a1','#81b29a','#f2cc8f','#c05840','#8790c4','#5a9278','#d8b870'];
+  const LABELS_MEADOW_DARK = ['#fb6107','#f3de2c','#7cb518','#86b72a','#fbb02d','#d94e05','#a0d028','#f09010'];
+  const LABELS_CLEAR_DARK = ['#935477','#c04b5e','#ffab48','#ff8744','#4f7c89','#aa5a8d','#dd5d72','#ee924a'];
 
   const STORAGE_KEY = 'the_timer_state_v1';
   const state = {
@@ -742,7 +745,15 @@
     const p = state.palette || 'sansad';
     const d = state.dark && p !== 'psychedelic';
     let label = baseColor;
-    if (!d) {
+    if (d) {
+      if (p === 'sansad') {
+        label = LABELS_SANSAD_DARK[i % LABELS_SANSAD_DARK.length];
+      } else if (p === 'meadow') {
+        label = LABELS_MEADOW_DARK[i % LABELS_MEADOW_DARK.length];
+      } else if (p === 'clear') {
+        label = LABELS_CLEAR_DARK[i % LABELS_CLEAR_DARK.length];
+      }
+    } else {
       if (p === 'meadow') {
         if (baseColor === '#f3de2c') label = '#a28900';
         else if (baseColor === '#fbb02d') label = '#c88712';
@@ -794,7 +805,7 @@
     const DARK_CLOCK = {
       bg: '#1c1a16', dimSuffix: '55', grayPast: '#3a3830',
       mark: '#c8c4bc', centerMain: '#ede8dc', centerMuted: '#8a8478',
-      handDark: '#ede8dc', handLight: '#1c1a16', chip: '#1c1a16ee',
+      handDark: '#ede8dc', handLight: '#1c1a16', chip: '#1c1a16dd',
     };
     const D = '#ffffffee'; // day chip: white so any colored text is readable
     if (p === 'meadow') return d
@@ -1087,9 +1098,7 @@
 
       let fill;
       if (isPast) {
-        fill = isPsychedelic
-          ? createPsychedelicGradient(defs, `psy-grad-${i}-past`, a0, a1, baseColor, nextColor, true)
-          : baseColor + dimSuffix;
+        fill = baseColor + dimSuffix;
       }
       else if (isActive) fill = baseColor;
       else {
@@ -1105,9 +1114,7 @@
         pastP.setAttribute('d', arcPath(a0, splitAngle, R, ri));
         pastP.setAttribute(
           'fill',
-          isPsychedelic
-            ? createPsychedelicGradient(defs, `psy-grad-${i}-active-past`, a0, splitAngle, baseColor, nextColor, true)
-            : baseColor + dimSuffix
+          baseColor + dimSuffix
         );
         svg.appendChild(pastP);
 
@@ -1238,19 +1245,15 @@
     const drawMark = (ang, len, w, op) => {
       const [mx0, my0] = polar(ang, R);
       const [mx1, my1] = polar(ang, R - len);
-      const mkLine = (stroke, width, opacity) => {
-        const l = document.createElementNS(NS, 'line');
-        l.setAttribute('x1', mx0); l.setAttribute('y1', my0);
-        l.setAttribute('x2', mx1); l.setAttribute('y2', my1);
-        l.setAttribute('stroke', stroke);
-        l.setAttribute('stroke-width', width);
-        l.setAttribute('stroke-linecap', 'round');
-        l.setAttribute('opacity', opacity);
-        l.setAttribute('pointer-events', 'none');
-        svg.appendChild(l);
-      };
-      mkLine('#ffffff', w + 2.5, 0.38); // white halo — visible on any colored sector
-      mkLine(markColor, w, op);
+      const l = document.createElementNS(NS, 'line');
+      l.setAttribute('x1', mx0); l.setAttribute('y1', my0);
+      l.setAttribute('x2', mx1); l.setAttribute('y2', my1);
+      l.setAttribute('stroke', markColor);
+      l.setAttribute('stroke-width', w);
+      l.setAttribute('stroke-linecap', 'round');
+      l.setAttribute('opacity', op);
+      l.setAttribute('pointer-events', 'none');
+      svg.appendChild(l);
     };
     if (state.showMin) {
       for (let m = 0; m < 60; m++) drawMark((m/60)*360, 5, 1, 0.45);
