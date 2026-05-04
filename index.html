@@ -210,6 +210,19 @@
     font-variant-emoji: text;
   }
   .flow-item .flow-del:hover { background: var(--pill); color: var(--fg); }
+  .sync-section {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .sync-input {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--bg); color: var(--fg);
+    font-size: 15px; font-family: inherit;
+  }
+  .sync-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .sync-row { display: flex; gap: 8px; }
+  .sync-btn { flex: 1; font-size: 14px; }
+  .sync-status { font-size: 13px; color: var(--muted); min-height: 18px; }
   .flash {
     position: fixed; inset: 0; pointer-events: none;
     background: #ffae00; opacity: 0; z-index: 100;
@@ -383,6 +396,14 @@
       <div class="flows">
         <button id="saveFlowBtn" class="quickstart"><span class="ico">💾︎</span> Spara flöde</button>
         <div class="flow-list" id="flowList"></div>
+      </div>
+      <div class="sync-section">
+        <input type="text" id="syncKey" class="sync-input" placeholder="Lösenfras för synk..." autocomplete="off" spellcheck="false">
+        <div class="sync-row">
+          <button id="syncLoadBtn" class="quickstart sync-btn">☁ Ladda</button>
+          <button id="syncSaveBtn" class="quickstart sync-btn">☁ Spara</button>
+        </div>
+        <div class="sync-status" id="syncStatus"></div>
       </div>
     </div>
   </main>
@@ -1221,6 +1242,51 @@
     renderFlows();
   }
 
+  // ---------- cloud sync ----------
+  const SYNC_KEY_STORAGE = 'timer-sync-key';
+
+  function syncShowStatus(msg, isError) {
+    const el = $('syncStatus');
+    el.textContent = msg;
+    el.style.color = isError ? '#c0392b' : 'var(--muted)';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.textContent = ''; }, 3000);
+  }
+
+  async function syncLoad() {
+    const key = $('syncKey').value.trim();
+    if (!key) { syncShowStatus('Ange en lösenfras', true); return; }
+    localStorage.setItem(SYNC_KEY_STORAGE, key);
+    try {
+      const res = await fetch('/api/sync?key=' + encodeURIComponent(key));
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      state.flows = data.flows || [];
+      save();
+      renderFlows();
+      syncShowStatus('Flöden laddade ✓');
+    } catch (_) {
+      syncShowStatus('Kunde inte ladda', true);
+    }
+  }
+
+  async function syncSave() {
+    const key = $('syncKey').value.trim();
+    if (!key) { syncShowStatus('Ange en lösenfras', true); return; }
+    localStorage.setItem(SYNC_KEY_STORAGE, key);
+    try {
+      const res = await fetch('/api/sync?key=' + encodeURIComponent(key), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flows: state.flows || [] }),
+      });
+      if (!res.ok) throw new Error();
+      syncShowStatus('Sparat till moln ✓');
+    } catch (_) {
+      syncShowStatus('Kunde inte spara', true);
+    }
+  }
+
   // ---------- init ----------
   function init() {
     load();
@@ -1244,6 +1310,10 @@
     $('partsArea').addEventListener('input', () => { parseParts(); save(); });
     $('saveFlowBtn').addEventListener('click', saveFlow);
     renderFlows();
+    const savedSyncKey = localStorage.getItem(SYNC_KEY_STORAGE);
+    if (savedSyncKey) $('syncKey').value = savedSyncKey;
+    $('syncLoadBtn').addEventListener('click', syncLoad);
+    $('syncSaveBtn').addEventListener('click', syncSave);
     $('helpBtn').addEventListener('click', () => $('helpModal').classList.add('open'));
     $('helpClose').addEventListener('click', () => $('helpModal').classList.remove('open'));
     $('helpModal').addEventListener('click', (e) => {
