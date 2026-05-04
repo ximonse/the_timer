@@ -628,7 +628,8 @@
   const COLORS_BRIGHT = ['#f9c80e','#f86624','#ea3546','#662e9b','#43bccd','#d4a808','#c44818','#8840c0'];
   const COLORS_CLEAR  = ['#5f0f40','#9a031e','#fb8b24','#e36414','#0f4c5c','#8a1560','#c20428','#d46010'];
   const COLORS_PSY    = ['#ff00ff','#ff0000','#ff8800','#ffff00','#00ff44','#00ffff','#4400ff','#ff00aa'];
-  const LABELS_MLPP_DAY = ['#86689e','#b15f8a','#c45e87','#5d8cb4','#4c7da7','#83639a','#bd4f7c','#4d89af'];
+    const LABELS_SANSAD_DAY = ['#e07a5f','#3d405b','#5f8f77','#c29b57','#c05840','#6a6e90','#467a61','#b28f4f'];
+    const LABELS_MLPP_DAY = ['#86689e','#b15f8a','#c45e87','#5d8cb4','#4c7da7','#83639a','#bd4f7c','#4d89af'];
   const LABELS_CLEAR_DAY = ['#7d2c60','#b43346','#d5771f','#c4621b','#2f6674','#9f3d7a','#cf3a4e','#cb7222'];
   const LABELS_SANSAD_DARK = ['#e07a5f','#6970a1','#81b29a','#f2cc8f','#c05840','#8790c4','#5a9278','#d8b870'];
   const LABELS_MEADOW_DARK = ['#fb6107','#f3de2c','#7cb518','#86b72a','#fbb02d','#d94e05','#a0d028','#f09010'];
@@ -757,6 +758,8 @@
       if (p === 'meadow') {
         if (baseColor === '#f3de2c') label = '#a28900';
         else if (baseColor === '#fbb02d') label = '#c88712';
+      } else if (p === 'sansad') {
+        label = LABELS_SANSAD_DAY[i % LABELS_SANSAD_DAY.length];
       } else if (p === 'mlp') {
         label = LABELS_MLPP_DAY[i % LABELS_MLPP_DAY.length];
       } else if (p === 'bright') {
