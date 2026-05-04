@@ -17,6 +17,9 @@ assert(html.includes("const segFilter = isPsychedelic ? 'url(#psy-edge-soft)' : 
 assert(html.includes("if (segFilter) path.setAttribute('filter', segFilter);"), 'psychedelic future segment should use soft-edge filter');
 assert(html.includes("if (segFilter) pastP.setAttribute('filter', segFilter);"), 'psychedelic past-active segment should use soft-edge filter');
 assert(html.includes("if (segFilter) liveP.setAttribute('filter', segFilter);"), 'psychedelic live-active segment should use soft-edge filter');
+assert(html.includes("const c0 = dimmed ? mixHex(baseColor, '#1a0033', 0.37) : mixHex(baseColor, '#ffffff', 0.26);"), 'psychedelic future gradient should have reduced dark-edge intensity');
+assert(html.includes("const c1 = dimmed ? mixHex(baseColor, nextColor, 0.15) : mixHex(baseColor, nextColor, 0.48);"), 'psychedelic future gradient should have reduced color-mix intensity');
+assert(html.includes("const c2 = dimmed ? mixHex(nextColor, '#140022', 0.39) : mixHex(nextColor, '#ffffff', 0.18);"), 'psychedelic future gradient should have reduced trailing dark-edge intensity');
 assert(html.includes("hit.setAttribute('stroke-width', '32');"), 'between-segment drag area should be widened');
 assert(html.includes("shit.setAttribute('stroke-width', '36');"), 'lesson-start drag area should be widened');
 assert(html.includes("ehit.setAttribute('stroke-width', '36');"), 'lesson-end drag area should be widened');
