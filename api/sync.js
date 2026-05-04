@@ -1,11 +1,19 @@
 const { Redis } = require('@upstash/redis');
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
+const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
 module.exports = async function handler(req, res) {
+  if (!url || !token) {
+    const available = Object.keys(process.env)
+      .filter(k => k.includes('REDIS') || k.includes('KV') || k.includes('UPSTASH'))
+      .join(', ');
+    console.error('Missing Redis credentials. Available env keys:', available || '(none)');
+    return res.status(500).json({ error: 'storage not configured', available });
+  }
+
+  const redis = new Redis({ url, token });
+
   const { key } = req.query;
   if (!key || typeof key !== 'string' || key.length < 2 || key.length > 100) {
     return res.status(400).json({ error: 'invalid key' });
