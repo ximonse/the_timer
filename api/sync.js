@@ -1,4 +1,9 @@
-const { kv } = require('@vercel/kv');
+const { Redis } = require('@upstash/redis');
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 module.exports = async function handler(req, res) {
   const { key } = req.query;
@@ -9,14 +14,14 @@ module.exports = async function handler(req, res) {
   const kvKey = `timer:${key}`;
 
   if (req.method === 'GET') {
-    const data = await kv.get(kvKey);
+    const data = await redis.get(kvKey);
     return res.status(200).json(data || { flows: [] });
   }
 
   if (req.method === 'POST') {
     const { flows } = req.body;
     if (!Array.isArray(flows)) return res.status(400).json({ error: 'invalid body' });
-    await kv.set(kvKey, { flows });
+    await redis.set(kvKey, { flows });
     return res.status(200).json({ ok: true });
   }
 
