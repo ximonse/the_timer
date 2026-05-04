@@ -117,6 +117,15 @@
   }
   .theme-dot:hover { opacity: 0.55; }
   .theme-dot.active { opacity: 0.5; }
+  body.night .theme-dot,
+  body.highcontrast .theme-dot,
+  body.psychedelic .theme-dot { opacity: 0.35; }
+  body.night .theme-dot:hover,
+  body.highcontrast .theme-dot:hover,
+  body.psychedelic .theme-dot:hover { opacity: 0.85; }
+  body.night .theme-dot.active,
+  body.highcontrast .theme-dot.active,
+  body.psychedelic .theme-dot.active { opacity: 0.75; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; transition: background .3s, color .3s; }
   body { min-height: 100vh; display: flex; }
@@ -530,6 +539,8 @@
   // Coherent muted earth-tone palette — same saturation/value level across hues
   const COLORS_DAY   = ['#C97548','#6B9B5F','#A85969','#5A7FA3','#C9994A','#7A8E59','#9B5C49','#5A8E89'];
   const COLORS_NIGHT = ['#E89870','#92C088','#D08596','#8AAACE','#E8BC72','#A5B884','#C28778','#86B5B0'];
+  const COLORS_HI    = ['#ff2200','#00cc00','#0055ff','#ff9900','#cc00cc','#00bbbb','#cccc00','#8800ff'];
+  const COLORS_PSY   = ['#ff00ff','#ff0000','#ff8800','#ffff00','#00ff44','#00ffff','#4400ff','#ff00aa'];
 
   const STORAGE_KEY = 'the_timer_state_v1';
   const state = {
@@ -611,8 +622,31 @@
 
   const totalMin = () => state.minutes.reduce((a,b)=>a+b, 0);
   const startAngle = () => ((state.startMin % 60) / 60) * 360;
-  const isNight = () => state.theme === 'night' || state.theme === 'psychedelic';
-  const colors = () => isNight() ? COLORS_NIGHT : COLORS_DAY;
+  function tv() {
+    switch (state.theme) {
+      case 'night': return {
+        colors: COLORS_NIGHT, bg: '#0d0d0d', dimSuffix: '55', grayPast: '#3a3530',
+        mark: '#f0e8d8', centerMain: '#f0e8d8', centerMuted: '#8a7a5a',
+        handDark: '#f0e8d8', handLight: '#0d0d0d', chip: '#1a1410',
+      };
+      case 'highcontrast': return {
+        colors: COLORS_HI, bg: '#000000', dimSuffix: '55', grayPast: '#1a1a00',
+        mark: '#ffff00', centerMain: '#ffff00', centerMuted: '#ffffff',
+        handDark: '#ffff00', handLight: '#000000', chip: '#0a0a00',
+      };
+      case 'psychedelic': return {
+        colors: COLORS_PSY, bg: '#00000066', dimSuffix: '66', grayPast: '#1a0033',
+        mark: '#ffffff', centerMain: '#ffffff', centerMuted: '#ffff00',
+        handDark: '#ffffff', handLight: '#00001a', chip: '#00000088',
+      };
+      default: return {
+        colors: COLORS_DAY, bg: '#f5efe2', dimSuffix: '40', grayPast: '#C8C5BE',
+        mark: '#1a1410', centerMain: '#2a2520', centerMuted: '#7a6f5a',
+        handDark: '#1a1410', handLight: '#ffffff', chip: '#fffaf0',
+      };
+    }
+  }
+  const colors = () => tv().colors;
 
   function nowMinutes() {
     const d = new Date();
@@ -848,9 +882,7 @@
 
     // Segments
     let cumMin = 0;
-    const bg = isNight() ? '#0d0d0d' : '#f5efe2';
-    const dimSuffix = isNight() ? '55' : '40';
-    const grayPast = isNight() ? '#3a3530' : '#C8C5BE';
+    const { bg, dimSuffix, grayPast, mark: markColor, centerMain, centerMuted, handDark, handLight, chip: chipFill } = tv();
     const labelDefer = [];
 
     state.parts.forEach((p, i) => {
@@ -945,7 +977,7 @@
         t1.setAttribute('x', CX); t1.setAttribute('y', CY - 8);
         t1.setAttribute('text-anchor', 'middle');
         t1.setAttribute('font-size', '11');
-        t1.setAttribute('fill', isNight() ? '#8a7a5a' : '#7a6f5a');
+        t1.setAttribute('fill', centerMuted);
         t1.textContent = 'slutar';
         svg.appendChild(t1);
 
@@ -956,7 +988,7 @@
         t2.setAttribute('font-weight', '200');
         t2.setAttribute('letter-spacing', '-0.5');
         t2.setAttribute('font-variant-numeric', 'tabular-nums');
-        t2.setAttribute('fill', isNight() ? '#f0e8d8' : '#2a2520');
+        t2.setAttribute('fill', centerMain);
         t2.textContent = fmtHM(state.startMin + tot);
         svg.appendChild(t2);
       }
@@ -997,7 +1029,6 @@
 
     // Marks — three independent layers drawn at every applicable position.
     // Order: minute (shortest, drawn first) → 5 → quarter (longest, drawn last on top).
-    const markColor = isNight() ? '#f0e8d8' : '#1a1410';
     const drawMark = (ang, len, w, op) => {
       const [mx0, my0] = polar(ang, R);
       const [mx1, my1] = polar(ang, R - len);
@@ -1038,8 +1069,8 @@
       const bx1 = cxB + px * halfW, by1 = cyB + py * halfW;
       const bx2 = cxB - px * halfW, by2 = cyB - py * halfW;
 
-      const dark = isNight() ? '#f0e8d8' : '#1a1410';
-      const light = isNight() ? '#0d0d0d' : '#ffffff';
+      const dark = handDark;
+      const light = handLight;
 
       const spike = document.createElementNS(NS, 'polygon');
       spike.setAttribute('points', `${tx},${ty} ${bx1},${by1} ${bx2},${by2}`);
@@ -1073,7 +1104,7 @@
         chip.setAttribute('width', bb.width + padX * 2);
         chip.setAttribute('height', bb.height + padY * 2);
         chip.setAttribute('rx', 3);
-        chip.setAttribute('fill', isNight() ? '#1a1410' : '#fffaf0');
+        chip.setAttribute('fill', chipFill);
         chip.setAttribute('stroke', fillText);
         chip.setAttribute('stroke-width', '1');
         chip.setAttribute('opacity', '0.95');
