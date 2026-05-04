@@ -29,6 +29,94 @@
     --pill-on-fg: #0d0d0d;
     --void: #050505;
   }
+  .vivid {
+    --bg: #ffffff;
+    --fg: #00008b;
+    --panel: #f0f4ff;
+    --border: #0050ff;
+    --muted: #3355cc;
+    --accent: #cc0000;
+    --pill: #dce8ff;
+    --pill-on: #0050ff;
+    --pill-on-fg: #ffffff;
+    --void: #00008b;
+  }
+  .highcontrast {
+    --bg: #000000;
+    --fg: #ffff00;
+    --panel: #111100;
+    --border: #ffff00;
+    --muted: #ffffff;
+    --accent: #00ffff;
+    --pill: #1a1a00;
+    --pill-on: #ffff00;
+    --pill-on-fg: #000000;
+    --void: #000000;
+  }
+  .psychedelic {
+    --bg: #ff00ff;
+    --fg: #ffffff;
+    --panel: rgba(255,255,0,0.12);
+    --border: #ff00ff;
+    --muted: #ffff00;
+    --accent: #ff00ff;
+    --pill: rgba(0,255,255,0.15);
+    --pill-on: #ffff00;
+    --pill-on-fg: #000000;
+    --void: #050010;
+  }
+  @keyframes real-psychedelic-pulse {
+    0%   { filter: hue-rotate(0deg)   saturate(1.9) brightness(1.03); }
+    20%  { filter: hue-rotate(110deg) saturate(2.6) brightness(1.14); }
+    40%  { filter: hue-rotate(210deg) saturate(2.1) brightness(1.06); }
+    60%  { filter: hue-rotate(320deg) saturate(2.7) brightness(1.16); }
+    80%  { filter: hue-rotate(70deg)  saturate(2.25) brightness(1.08); }
+    100% { filter: hue-rotate(360deg) saturate(1.9) brightness(1.03); }
+  }
+  @keyframes real-psychedelic-move {
+    0%   { transform: translate(-6%,-4%) scale(1.06) rotate(0deg); }
+    25%  { transform: translate(5%,-8%) scale(1.18) rotate(2deg); }
+    50%  { transform: translate(10%,7%) scale(1.26) rotate(-2deg); }
+    75%  { transform: translate(-8%,8%) scale(1.17) rotate(1deg); }
+    100% { transform: translate(-6%,-4%) scale(1.06) rotate(0deg); }
+  }
+  @keyframes real-psychedelic-drift {
+    0%   { transform: translate(7%,5%)   scale(1.08) rotate(0deg); }
+    33%  { transform: translate(-10%,8%) scale(1.2)  rotate(-2deg); }
+    66%  { transform: translate(8%,-9%)  scale(1.14) rotate(2deg); }
+    100% { transform: translate(7%,5%)   scale(1.08) rotate(0deg); }
+  }
+  body.psychedelic { background: linear-gradient(135deg,#f0f,#0ff); }
+  body.psychedelic::before {
+    content: ""; pointer-events: none; position: fixed; inset: -12%; z-index: -2;
+    mix-blend-mode: screen;
+    background: radial-gradient(circle at 20%,#ff00ff80,transparent 52%),
+                radial-gradient(circle at 80%,#00ffff80,transparent 52%),
+                radial-gradient(circle,#ffff0061,transparent 55%);
+    animation: 4.8s linear infinite real-psychedelic-pulse, 7.5s ease-in-out infinite real-psychedelic-move;
+  }
+  body.psychedelic::after {
+    content: ""; pointer-events: none; position: fixed; inset: -14%; z-index: -1;
+    mix-blend-mode: screen;
+    background: radial-gradient(circle at 15% 22%,#ff00ff5c,transparent 46%),
+                radial-gradient(circle at 72% 18%,#00ffff57,transparent 44%),
+                radial-gradient(circle at 66% 74%,#ffff0047,transparent 42%),
+                radial-gradient(circle at 28% 78%,#ff00ff3d,transparent 40%);
+    animation: 3.9s linear infinite reverse real-psychedelic-pulse, 6.3s ease-in-out infinite real-psychedelic-drift;
+  }
+  body.psychedelic .sidebar { background: rgba(0,0,20,0.45); backdrop-filter: blur(6px); }
+  body.psychedelic .controls { background: rgba(0,0,20,0.3); }
+  .theme-dots {
+    position: fixed; top: 10px; right: 10px; z-index: 55;
+    display: flex; gap: 7px; align-items: center;
+  }
+  .theme-dot {
+    width: 9px; height: 9px; border-radius: 50%; border: 0; padding: 0;
+    background: var(--fg); opacity: 0.15; cursor: pointer;
+    transition: opacity .2s;
+  }
+  .theme-dot:hover { opacity: 0.55; }
+  .theme-dot.active { opacity: 0.5; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; transition: background .3s, color .3s; }
   body { min-height: 100vh; display: flex; }
@@ -351,7 +439,6 @@
         <button class="pill" data-toggle="showCenterEnd">Sluttid i mitten <span>•</span></button>
         <button class="pill" data-toggle="hollow">Ihålig mitt <span>•</span></button>
         <button class="pill" data-toggle="textOutside">Text utanför <span>•</span></button>
-        <button class="pill" data-toggle="night">Nattläge <span>•</span></button>
         <button class="pill" data-toggle="showQuarter">Kvartmarkeringar <span>•</span></button>
         <button class="pill" data-toggle="showFive">5-minutersmarkeringar <span>•</span></button>
         <button class="pill" data-toggle="showMin">Minutmarkeringar <span>•</span></button>
@@ -408,6 +495,12 @@
     </div>
   </main>
 </div>
+<div class="theme-dots" id="themeDots">
+  <button class="theme-dot" data-theme="night"        title="Natt"></button>
+  <button class="theme-dot" data-theme="vivid"        title="Starka färger"></button>
+  <button class="theme-dot" data-theme="highcontrast" title="Högkontrast"></button>
+  <button class="theme-dot" data-theme="psychedelic"  title="Psykadelisk"></button>
+</div>
 <div class="flash" id="flash"></div>
 
 <div class="help-modal" id="helpModal">
@@ -451,7 +544,7 @@
     showCenterEnd: true,
     hollow: true,
     textOutside: false,
-    night: false,
+    theme: '',
     showControls: true,
     showMin: false,
     showFive: true,
@@ -518,7 +611,8 @@
 
   const totalMin = () => state.minutes.reduce((a,b)=>a+b, 0);
   const startAngle = () => ((state.startMin % 60) / 60) * 360;
-  const colors = () => state.night ? COLORS_NIGHT : COLORS_DAY;
+  const isNight = () => state.theme === 'night' || state.theme === 'psychedelic';
+  const colors = () => isNight() ? COLORS_NIGHT : COLORS_DAY;
 
   function nowMinutes() {
     const d = new Date();
@@ -649,8 +743,12 @@
       segBtn.textContent = labels[state.segMinutesMode] || labels.planned;
       segBtn.classList.toggle('on', state.segMinutesMode !== 'off');
     }
-    document.documentElement.classList.toggle('night', state.night);
-    document.body.classList.toggle('night', state.night);
+    const THEME_CLASSES = ['night','vivid','highcontrast','psychedelic'];
+    document.body.classList.remove(...THEME_CLASSES);
+    if (state.theme) document.body.classList.add(state.theme);
+    document.querySelectorAll('.theme-dot').forEach(d =>
+      d.classList.toggle('active', d.dataset.theme === state.theme));
+
     $('leftText').style.opacity = state.showLeft ? '1' : '0';
     document.querySelector('.controls').style.display = state.showControls ? 'flex' : 'none';
   }
@@ -750,9 +848,9 @@
 
     // Segments
     let cumMin = 0;
-    const bg = state.night ? '#0d0d0d' : '#f5efe2';
-    const dimSuffix = state.night ? '55' : '40';
-    const grayPast = state.night ? '#3a3530' : '#C8C5BE';
+    const bg = isNight() ? '#0d0d0d' : '#f5efe2';
+    const dimSuffix = isNight() ? '55' : '40';
+    const grayPast = isNight() ? '#3a3530' : '#C8C5BE';
     const labelDefer = [];
 
     state.parts.forEach((p, i) => {
@@ -847,7 +945,7 @@
         t1.setAttribute('x', CX); t1.setAttribute('y', CY - 8);
         t1.setAttribute('text-anchor', 'middle');
         t1.setAttribute('font-size', '11');
-        t1.setAttribute('fill', state.night ? '#8a7a5a' : '#7a6f5a');
+        t1.setAttribute('fill', isNight() ? '#8a7a5a' : '#7a6f5a');
         t1.textContent = 'slutar';
         svg.appendChild(t1);
 
@@ -858,7 +956,7 @@
         t2.setAttribute('font-weight', '200');
         t2.setAttribute('letter-spacing', '-0.5');
         t2.setAttribute('font-variant-numeric', 'tabular-nums');
-        t2.setAttribute('fill', state.night ? '#f0e8d8' : '#2a2520');
+        t2.setAttribute('fill', isNight() ? '#f0e8d8' : '#2a2520');
         t2.textContent = fmtHM(state.startMin + tot);
         svg.appendChild(t2);
       }
@@ -899,7 +997,7 @@
 
     // Marks — three independent layers drawn at every applicable position.
     // Order: minute (shortest, drawn first) → 5 → quarter (longest, drawn last on top).
-    const markColor = state.night ? '#f0e8d8' : '#1a1410';
+    const markColor = isNight() ? '#f0e8d8' : '#1a1410';
     const drawMark = (ang, len, w, op) => {
       const [mx0, my0] = polar(ang, R);
       const [mx1, my1] = polar(ang, R - len);
@@ -940,8 +1038,8 @@
       const bx1 = cxB + px * halfW, by1 = cyB + py * halfW;
       const bx2 = cxB - px * halfW, by2 = cyB - py * halfW;
 
-      const dark = state.night ? '#f0e8d8' : '#1a1410';
-      const light = state.night ? '#0d0d0d' : '#ffffff';
+      const dark = isNight() ? '#f0e8d8' : '#1a1410';
+      const light = isNight() ? '#0d0d0d' : '#ffffff';
 
       const spike = document.createElementNS(NS, 'polygon');
       spike.setAttribute('points', `${tx},${ty} ${bx1},${by1} ${bx2},${by2}`);
@@ -975,7 +1073,7 @@
         chip.setAttribute('width', bb.width + padX * 2);
         chip.setAttribute('height', bb.height + padY * 2);
         chip.setAttribute('rx', 3);
-        chip.setAttribute('fill', state.night ? '#1a1410' : '#fffaf0');
+        chip.setAttribute('fill', isNight() ? '#1a1410' : '#fffaf0');
         chip.setAttribute('stroke', fillText);
         chip.setAttribute('stroke-width', '1');
         chip.setAttribute('opacity', '0.95');
@@ -1314,6 +1412,13 @@
     if (savedSyncKey) $('syncKey').value = savedSyncKey;
     $('syncLoadBtn').addEventListener('click', syncLoad);
     $('syncSaveBtn').addEventListener('click', syncSave);
+    document.querySelectorAll('.theme-dot').forEach(dot => {
+      dot.addEventListener('click', () => {
+        state.theme = state.theme === dot.dataset.theme ? '' : dot.dataset.theme;
+        syncToggles();
+        save();
+      });
+    });
     $('helpBtn').addEventListener('click', () => $('helpModal').classList.add('open'));
     $('helpClose').addEventListener('click', () => $('helpModal').classList.remove('open'));
     $('helpModal').addEventListener('click', (e) => {
