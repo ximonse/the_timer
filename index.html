@@ -677,34 +677,35 @@
     const DARK_CLOCK = {
       bg: '#1c1a16', dimSuffix: '55', grayPast: '#3a3830',
       mark: '#c8c4bc', centerMain: '#ede8dc', centerMuted: '#8a8478',
-      handDark: '#ede8dc', handLight: '#1c1a16', chip: '#1c1a1688',
+      handDark: '#ede8dc', handLight: '#1c1a16', chip: '#1c1a16ee',
     };
+    const D = '#ffffffee'; // day chip: white so any colored text is readable
     if (p === 'meadow') return d
       ? { colors: COLORS_MEADOW, ...DARK_CLOCK }
       : { colors: COLORS_MEADOW, bg: '#f4f1de', dimSuffix: '40', grayPast: '#c8c8b8',
           mark: '#2a3a10', centerMain: '#2a3a10', centerMuted: '#5c8001',
-          handDark: '#2a3a10', handLight: '#f4f1de', chip: '#e5e8d8' };
+          handDark: '#2a3a10', handLight: '#f4f1de', chip: D };
     if (p === 'mlp') return d
       ? { colors: COLORS_MLP, ...DARK_CLOCK }
       : { colors: COLORS_MLP, bg: '#fff5fb', dimSuffix: '40', grayPast: '#e8d8e8',
           mark: '#5a3070', centerMain: '#5a3070', centerMuted: '#8080b0',
-          handDark: '#5a3070', handLight: '#fff5fb', chip: '#f0e0f8' };
+          handDark: '#5a3070', handLight: '#fff5fb', chip: D };
     if (p === 'bright') return d
       ? { colors: COLORS_BRIGHT, ...DARK_CLOCK }
       : { colors: COLORS_BRIGHT, bg: '#f4f1de', dimSuffix: '40', grayPast: '#c8c0c8',
           mark: '#1a0820', centerMain: '#1a0820', centerMuted: '#662e9b',
-          handDark: '#1a0820', handLight: '#f4f1de', chip: '#e8e5d8' };
+          handDark: '#1a0820', handLight: '#f4f1de', chip: D };
     if (p === 'clear') return d
       ? { colors: COLORS_CLEAR, ...DARK_CLOCK }
       : { colors: COLORS_CLEAR, bg: '#f9f2ee', dimSuffix: '40', grayPast: '#c8c0b8',
           mark: '#5f0f40', centerMain: '#5f0f40', centerMuted: '#0f4c5c',
-          handDark: '#5f0f40', handLight: '#f9f2ee', chip: '#ede5e0' };
+          handDark: '#5f0f40', handLight: '#f9f2ee', chip: D };
     // sansad (default)
     return d
       ? { colors: COLORS_SANSAD, ...DARK_CLOCK }
       : { colors: COLORS_SANSAD, bg: '#f4f1de', dimSuffix: '40', grayPast: '#c5c2b8',
           mark: '#3d405b', centerMain: '#3d405b', centerMuted: '#81b29a',
-          handDark: '#3d405b', handLight: '#f4f1de', chip: '#ece9d5' };
+          handDark: '#3d405b', handLight: '#f4f1de', chip: D };
   }
   const colors = () => tv().colors;
 
