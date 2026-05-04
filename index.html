@@ -6,52 +6,124 @@
 <title>Lektionsklocka</title>
 <style>
   :root {
-    --bg: #f5efe2;
-    --fg: #2a2520;
-    --panel: #ffffff;
-    --border: #d8cfb8;
-    --muted: #7a6f5a;
-    --accent: #2a2520;
-    --pill: #e8dfc8;
-    --pill-on: #2a2520;
-    --pill-on-fg: #f5efe2;
-    --void: #2a2520;
+    --bg: #f4f1de;
+    --fg: #3d405b;
+    --panel: #ece9d5;
+    --border: #c8c5b5;
+    --muted: #81b29a;
+    --accent: #e07a5f;
+    --pill: #e8e5d8;
+    --pill-on: #3d405b;
+    --pill-on-fg: #f4f1de;
+    --void: #3d405b;
   }
-  .night {
-    --bg: #0d0d0d;
-    --fg: #f0e8d8;
-    --panel: #1a1612;
-    --border: #4a3e2a;
-    --muted: #8a7a5a;
-    --accent: #f0e8d8;
-    --pill: #2a2218;
-    --pill-on: #f0e8d8;
-    --pill-on-fg: #0d0d0d;
-    --void: #050505;
+  .dark {
+    --bg: #1a1b2e;
+    --fg: #f2cc8f;
+    --panel: #252640;
+    --border: #3d405b;
+    --muted: #81b29a;
+    --accent: #e07a5f;
+    --pill: #252640;
+    --pill-on: #81b29a;
+    --pill-on-fg: #1a1b2e;
+    --void: #0e0e1c;
   }
-  .vivid {
-    --bg: #ffffff;
-    --fg: #00008b;
-    --panel: #f0f4ff;
-    --border: #0050ff;
-    --muted: #3355cc;
-    --accent: #cc0000;
-    --pill: #dce8ff;
-    --pill-on: #0050ff;
-    --pill-on-fg: #ffffff;
-    --void: #00008b;
+  .meadow {
+    --bg: #f4f1de;
+    --fg: #2a3a10;
+    --panel: #e5e8d0;
+    --border: #a8c080;
+    --muted: #5c8001;
+    --accent: #fb6107;
+    --pill: #e5e8d8;
+    --pill-on: #5c8001;
+    --pill-on-fg: #f4f1de;
+    --void: #2a3a10;
   }
-  .highcontrast {
-    --bg: #000000;
-    --fg: #ffff00;
-    --panel: #111100;
-    --border: #ffff00;
-    --muted: #ffffff;
-    --accent: #00ffff;
-    --pill: #1a1a00;
-    --pill-on: #ffff00;
-    --pill-on-fg: #000000;
-    --void: #000000;
+  .meadow.dark {
+    --bg: #161e0a;
+    --fg: #f3de2c;
+    --panel: #1e2c10;
+    --border: #5c8001;
+    --muted: #7cb518;
+    --accent: #fb6107;
+    --pill: #1e2c10;
+    --pill-on: #7cb518;
+    --pill-on-fg: #161e0a;
+    --void: #0a1005;
+  }
+  .mlp {
+    --bg: #fff5fb;
+    --fg: #5a3070;
+    --panel: #f8eaf8;
+    --border: #d4a0e8;
+    --muted: #8080b0;
+    --accent: #ffafcc;
+    --pill: #f0e0f8;
+    --pill-on: #cdb4db;
+    --pill-on-fg: #5a3070;
+    --void: #5a3070;
+  }
+  .mlp.dark {
+    --bg: #1a0828;
+    --fg: #ffc8dd;
+    --panel: #240f35;
+    --border: #7050a8;
+    --muted: #a080c0;
+    --accent: #ffafcc;
+    --pill: #240f35;
+    --pill-on: #cdb4db;
+    --pill-on-fg: #1a0828;
+    --void: #0d0415;
+  }
+  .bright {
+    --bg: #f4f1de;
+    --fg: #1a0820;
+    --panel: #e8e5d8;
+    --border: #c0a0b8;
+    --muted: #662e9b;
+    --accent: #f86624;
+    --pill: #e8e5d8;
+    --pill-on: #662e9b;
+    --pill-on-fg: #f4f1de;
+    --void: #1a0820;
+  }
+  .bright.dark {
+    --bg: #0d0518;
+    --fg: #f9c80e;
+    --panel: #180a28;
+    --border: #662e9b;
+    --muted: #43bccd;
+    --accent: #f86624;
+    --pill: #180a28;
+    --pill-on: #662e9b;
+    --pill-on-fg: #f9c80e;
+    --void: #070310;
+  }
+  .clear {
+    --bg: #f9f2ee;
+    --fg: #5f0f40;
+    --panel: #ede5e0;
+    --border: #c09888;
+    --muted: #0f4c5c;
+    --accent: #fb8b24;
+    --pill: #ede5e0;
+    --pill-on: #5f0f40;
+    --pill-on-fg: #f9f2ee;
+    --void: #5f0f40;
+  }
+  .clear.dark {
+    --bg: #080510;
+    --fg: #fb8b24;
+    --panel: #120818;
+    --border: #5f0f40;
+    --muted: #9a031e;
+    --accent: #e36414;
+    --pill: #120818;
+    --pill-on: #5f0f40;
+    --pill-on-fg: #fb8b24;
+    --void: #040208;
   }
   .psychedelic {
     --bg: #ff00ff;
@@ -112,20 +184,28 @@
   }
   .theme-dot {
     width: 9px; height: 9px; border-radius: 50%; border: 0; padding: 0;
-    background: var(--fg); opacity: 0.15; cursor: pointer;
-    transition: opacity .2s;
+    opacity: 0.3; cursor: pointer; transition: opacity .2s;
   }
-  .theme-dot:hover { opacity: 0.55; }
-  .theme-dot.active { opacity: 0.5; }
-  body.night .theme-dot,
-  body.highcontrast .theme-dot,
-  body.psychedelic .theme-dot { opacity: 0.35; }
-  body.night .theme-dot:hover,
-  body.highcontrast .theme-dot:hover,
-  body.psychedelic .theme-dot:hover { opacity: 0.85; }
-  body.night .theme-dot.active,
-  body.highcontrast .theme-dot.active,
-  body.psychedelic .theme-dot.active { opacity: 0.75; }
+  .theme-dot:hover { opacity: 0.7; }
+  .theme-dot.active { opacity: 0.9; }
+  #darkToggle {
+    width: 14px; height: 9px; border-radius: 5px; border: 0; padding: 0;
+    background: var(--fg); opacity: 0.2; cursor: pointer;
+    transition: opacity .2s; font-size: 7px; color: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #darkToggle:hover { opacity: 0.6; }
+  #darkToggle.active { opacity: 0.55; }
+  body.dark .theme-dot,
+  body.psychedelic .theme-dot { opacity: 0.45; }
+  body.dark .theme-dot:hover,
+  body.psychedelic .theme-dot:hover { opacity: 0.9; }
+  body.dark .theme-dot.active,
+  body.psychedelic .theme-dot.active { opacity: 1; }
+  body.dark #darkToggle,
+  body.psychedelic #darkToggle { opacity: 0.4; }
+  body.dark #darkToggle:hover,
+  body.psychedelic #darkToggle:hover { opacity: 0.85; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; transition: background .3s, color .3s; }
   body { min-height: 100vh; display: flex; }
@@ -165,7 +245,7 @@
     font-size: 26px; line-height: 1.35; white-space: pre-wrap;
     font-style: italic;
   }
-  .night .seglist .infobox {
+  .dark .seglist .infobox {
     background: #ececec; color: #000000;
     border: none;
   }
@@ -505,10 +585,13 @@
   </main>
 </div>
 <div class="theme-dots" id="themeDots">
-  <button class="theme-dot" data-theme="night"        title="Natt"></button>
-  <button class="theme-dot" data-theme="vivid"        title="Starka färger"></button>
-  <button class="theme-dot" data-theme="highcontrast" title="Högkontrast"></button>
-  <button class="theme-dot" data-theme="psychedelic"  title="Psykadelisk"></button>
+  <button class="theme-dot" data-palette="sansad"      title="Sansad"         style="background:#e07a5f"></button>
+  <button class="theme-dot" data-palette="meadow"      title="Meadow"         style="background:#7cb518"></button>
+  <button class="theme-dot" data-palette="mlp"         title="My Little Pony" style="background:#cdb4db"></button>
+  <button class="theme-dot" data-palette="bright"      title="Bright"         style="background:#f86624"></button>
+  <button class="theme-dot" data-palette="clear"       title="Clear"          style="background:#9a031e"></button>
+  <button class="theme-dot" data-palette="psychedelic" title="Psykadelisk"    style="background:#ff00ff"></button>
+  <button id="darkToggle" title="Dag/Natt">☀</button>
 </div>
 <div class="flash" id="flash"></div>
 
@@ -537,10 +620,12 @@
   const CX = 180, CY = 180, R = 155, Ri = 65;
 
   // Coherent muted earth-tone palette — same saturation/value level across hues
-  const COLORS_DAY   = ['#C97548','#6B9B5F','#A85969','#5A7FA3','#C9994A','#7A8E59','#9B5C49','#5A8E89'];
-  const COLORS_NIGHT = ['#E89870','#92C088','#D08596','#8AAACE','#E8BC72','#A5B884','#C28778','#86B5B0'];
-  const COLORS_HI    = ['#ff2200','#00cc00','#0055ff','#ff9900','#cc00cc','#00bbbb','#cccc00','#8800ff'];
-  const COLORS_PSY   = ['#ff00ff','#ff0000','#ff8800','#ffff00','#00ff44','#00ffff','#4400ff','#ff00aa'];
+  const COLORS_SANSAD = ['#e07a5f','#3d405b','#81b29a','#f2cc8f','#c05840','#6a6e90','#5a9278','#d8b870'];
+  const COLORS_MEADOW = ['#fb6107','#f3de2c','#7cb518','#5c8001','#fbb02d','#d94e05','#a0d028','#f09010'];
+  const COLORS_MLP    = ['#cdb4db','#ffc8dd','#ffafcc','#bde0fe','#a2d2ff','#b898d0','#ff90b8','#80c8f8'];
+  const COLORS_BRIGHT = ['#f9c80e','#f86624','#ea3546','#662e9b','#43bccd','#d4a808','#c44818','#8840c0'];
+  const COLORS_CLEAR  = ['#5f0f40','#9a031e','#fb8b24','#e36414','#0f4c5c','#8a1560','#c20428','#d46010'];
+  const COLORS_PSY    = ['#ff00ff','#ff0000','#ff8800','#ffff00','#00ff44','#00ffff','#4400ff','#ff00aa'];
 
   const STORAGE_KEY = 'the_timer_state_v1';
   const state = {
@@ -555,7 +640,8 @@
     showCenterEnd: true,
     hollow: true,
     textOutside: false,
-    theme: '',
+    palette: 'sansad',
+    dark: false,
     showControls: true,
     showMin: false,
     showFive: true,
@@ -582,6 +668,12 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const data = JSON.parse(raw);
+      if (data.theme !== undefined && data.palette === undefined) {
+        const m = { night: ['sansad', true], vivid: ['meadow', false], highcontrast: ['bright', false], psychedelic: ['psychedelic', false] };
+        const [p, d] = m[data.theme] || ['sansad', false];
+        data.palette = p; data.dark = d;
+        delete data.theme;
+      }
       Object.assign(state, data);
     } catch (_) {}
   }
@@ -623,28 +715,59 @@
   const totalMin = () => state.minutes.reduce((a,b)=>a+b, 0);
   const startAngle = () => ((state.startMin % 60) / 60) * 360;
   function tv() {
-    switch (state.theme) {
-      case 'night': return {
-        colors: COLORS_NIGHT, bg: '#0d0d0d', dimSuffix: '55', grayPast: '#3a3530',
-        mark: '#f0e8d8', centerMain: '#f0e8d8', centerMuted: '#8a7a5a',
-        handDark: '#f0e8d8', handLight: '#0d0d0d', chip: '#1a1410',
-      };
-      case 'highcontrast': return {
-        colors: COLORS_HI, bg: '#000000', dimSuffix: '55', grayPast: '#1a1a00',
-        mark: '#ffff00', centerMain: '#ffff00', centerMuted: '#ffffff',
-        handDark: '#ffff00', handLight: '#000000', chip: '#0a0a00',
-      };
-      case 'psychedelic': return {
-        colors: COLORS_PSY, bg: '#00000066', dimSuffix: '66', grayPast: '#1a0033',
-        mark: '#ffffff', centerMain: '#ffffff', centerMuted: '#ffff00',
-        handDark: '#ffffff', handLight: '#00001a', chip: '#00000088',
-      };
-      default: return {
-        colors: COLORS_DAY, bg: '#f5efe2', dimSuffix: '40', grayPast: '#C8C5BE',
-        mark: '#1a1410', centerMain: '#2a2520', centerMuted: '#7a6f5a',
-        handDark: '#1a1410', handLight: '#ffffff', chip: '#fffaf0',
-      };
-    }
+    const p = state.palette || 'sansad';
+    const d = state.dark && p !== 'psychedelic';
+    if (p === 'psychedelic') return {
+      colors: COLORS_PSY, bg: '#00000066', dimSuffix: '66', grayPast: '#1a0033',
+      mark: '#ffffff', centerMain: '#ffffff', centerMuted: '#ffff00',
+      handDark: '#ffffff', handLight: '#00001a', chip: '#00000088',
+    };
+    if (p === 'meadow') return d ? {
+      colors: COLORS_MEADOW, bg: '#161e0a', dimSuffix: '55', grayPast: '#1e2c10',
+      mark: '#f3de2c', centerMain: '#f3de2c', centerMuted: '#7cb518',
+      handDark: '#f3de2c', handLight: '#161e0a', chip: '#1e2c10',
+    } : {
+      colors: COLORS_MEADOW, bg: '#f4f1de', dimSuffix: '40', grayPast: '#c8c8b8',
+      mark: '#2a3a10', centerMain: '#2a3a10', centerMuted: '#5c8001',
+      handDark: '#2a3a10', handLight: '#f4f1de', chip: '#e5e8d8',
+    };
+    if (p === 'mlp') return d ? {
+      colors: COLORS_MLP, bg: '#1a0828', dimSuffix: '55', grayPast: '#2a1838',
+      mark: '#ffc8dd', centerMain: '#ffc8dd', centerMuted: '#a080c0',
+      handDark: '#ffc8dd', handLight: '#1a0828', chip: '#240f35',
+    } : {
+      colors: COLORS_MLP, bg: '#fff5fb', dimSuffix: '40', grayPast: '#e8d8e8',
+      mark: '#5a3070', centerMain: '#5a3070', centerMuted: '#8080b0',
+      handDark: '#5a3070', handLight: '#fff5fb', chip: '#f0e0f8',
+    };
+    if (p === 'bright') return d ? {
+      colors: COLORS_BRIGHT, bg: '#0d0518', dimSuffix: '55', grayPast: '#1a0830',
+      mark: '#f9c80e', centerMain: '#f9c80e', centerMuted: '#43bccd',
+      handDark: '#f9c80e', handLight: '#0d0518', chip: '#180a28',
+    } : {
+      colors: COLORS_BRIGHT, bg: '#f4f1de', dimSuffix: '40', grayPast: '#c8c0c8',
+      mark: '#1a0820', centerMain: '#1a0820', centerMuted: '#662e9b',
+      handDark: '#1a0820', handLight: '#f4f1de', chip: '#e8e5d8',
+    };
+    if (p === 'clear') return d ? {
+      colors: COLORS_CLEAR, bg: '#080510', dimSuffix: '55', grayPast: '#150a20',
+      mark: '#fb8b24', centerMain: '#fb8b24', centerMuted: '#9a031e',
+      handDark: '#fb8b24', handLight: '#080510', chip: '#120818',
+    } : {
+      colors: COLORS_CLEAR, bg: '#f9f2ee', dimSuffix: '40', grayPast: '#c8c0b8',
+      mark: '#5f0f40', centerMain: '#5f0f40', centerMuted: '#0f4c5c',
+      handDark: '#5f0f40', handLight: '#f9f2ee', chip: '#ede5e0',
+    };
+    // sansad (default)
+    return d ? {
+      colors: COLORS_SANSAD, bg: '#1a1b2e', dimSuffix: '55', grayPast: '#2d2e42',
+      mark: '#f2cc8f', centerMain: '#f2cc8f', centerMuted: '#81b29a',
+      handDark: '#f2cc8f', handLight: '#1a1b2e', chip: '#252640',
+    } : {
+      colors: COLORS_SANSAD, bg: '#f4f1de', dimSuffix: '40', grayPast: '#c5c2b8',
+      mark: '#3d405b', centerMain: '#3d405b', centerMuted: '#81b29a',
+      handDark: '#3d405b', handLight: '#f4f1de', chip: '#ece9d5',
+    };
   }
   const colors = () => tv().colors;
 
@@ -777,11 +900,17 @@
       segBtn.textContent = labels[state.segMinutesMode] || labels.planned;
       segBtn.classList.toggle('on', state.segMinutesMode !== 'off');
     }
-    const THEME_CLASSES = ['night','vivid','highcontrast','psychedelic'];
-    document.body.classList.remove(...THEME_CLASSES);
-    if (state.theme) document.body.classList.add(state.theme);
-    document.querySelectorAll('.theme-dot').forEach(d =>
-      d.classList.toggle('active', d.dataset.theme === state.theme));
+    const PALETTE_CLASSES = ['sansad','meadow','mlp','bright','clear','psychedelic'];
+    document.body.classList.remove(...PALETTE_CLASSES, 'dark');
+    if (state.palette) document.body.classList.add(state.palette);
+    if (state.dark && state.palette !== 'psychedelic') document.body.classList.add('dark');
+    document.querySelectorAll('.theme-dot[data-palette]').forEach(d =>
+      d.classList.toggle('active', d.dataset.palette === state.palette));
+    const darkToggle = document.getElementById('darkToggle');
+    if (darkToggle) {
+      darkToggle.textContent = state.dark ? '☾' : '☀';
+      darkToggle.classList.toggle('active', state.dark);
+    }
 
     $('leftText').style.opacity = state.showLeft ? '1' : '0';
     document.querySelector('.controls').style.display = state.showControls ? 'flex' : 'none';
@@ -1443,12 +1572,19 @@
     if (savedSyncKey) $('syncKey').value = savedSyncKey;
     $('syncLoadBtn').addEventListener('click', syncLoad);
     $('syncSaveBtn').addEventListener('click', syncSave);
-    document.querySelectorAll('.theme-dot').forEach(dot => {
+    document.querySelectorAll('.theme-dot[data-palette]').forEach(dot => {
       dot.addEventListener('click', () => {
-        state.theme = state.theme === dot.dataset.theme ? '' : dot.dataset.theme;
+        state.palette = dot.dataset.palette;
         syncToggles();
         save();
       });
+    });
+    document.getElementById('darkToggle').addEventListener('click', () => {
+      if (state.palette !== 'psychedelic') {
+        state.dark = !state.dark;
+        syncToggles();
+        save();
+      }
     });
     $('helpBtn').addEventListener('click', () => $('helpModal').classList.add('open'));
     $('helpClose').addEventListener('click', () => $('helpModal').classList.remove('open'));
