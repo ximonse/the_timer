@@ -658,6 +658,7 @@
     notes: [],
     extraInfo: '',
     flows: [],
+    pinnedMins: [],
     showSegNotes: true,
     showExtraInfo: true,
     showSegLabels: true,
@@ -874,7 +875,8 @@
   function serializePartsAndNotes() {
     const out = [];
     state.parts.forEach((p, i) => {
-      out.push(p);
+      const pinned = state.pinnedMins && state.pinnedMins[i];
+      out.push(pinned ? `${p} ${state.minutes[i]}m` : p);
       const note = (state.notes && state.notes[i]) || '';
       note.split('\n').filter(s => s.trim().length > 0).forEach(line => {
         out.push('-' + line);
@@ -888,6 +890,7 @@
     const lines = raw.split('\n').map(l => l.replace(/\s+$/, '')).filter(l => l.trim().length > 0);
     const parts = [];
     const notes = [];
+    const parsedMins = []; // null = not specified, number = explicit
     lines.forEach(l => {
       const t = l.trim();
       if (t.startsWith('-') && parts.length > 0) {
@@ -896,26 +899,35 @@
           ? notes[parts.length - 1] + '\n' + sub
           : sub;
       } else {
-        parts.push(t);
+        const m = t.match(/\s+(\d+)m$/i);
+        if (m) {
+          parts.push(t.slice(0, t.length - m[0].length));
+          parsedMins.push(Math.max(1, parseInt(m[1], 10)));
+        } else {
+          parts.push(t);
+          parsedMins.push(null);
+        }
       }
     });
     if (parts.length === 0) {
       state.parts = ['Lektion'];
       state.notes = [''];
+      state.pinnedMins = [false];
     } else {
       state.parts = parts;
       state.notes = parts.map((_, i) => notes[i] || '');
-    }
-    // resize minutes/warnings, distribute current total evenly
-    const tot = totalMin() || 45;
-    const n = state.parts.length;
-    if (state.minutes.length !== n) {
-      const each = Math.max(2, Math.round(tot / n));
-      state.minutes = state.parts.map(() => each);
-      // adjust last to keep total
-      const diff = tot - state.minutes.reduce((a,b)=>a+b,0);
-      state.minutes[n-1] = Math.max(2, state.minutes[n-1] + diff);
-      state.warnings = state.parts.map((_, i) => state.warnings[i] || false);
+      state.pinnedMins = parsedMins.map(m => m !== null);
+      const n = parts.length;
+      const prevMins = state.minutes.length === n ? state.minutes.slice() : null;
+      const tot = totalMin() || 45;
+      const unpinnedCount = parsedMins.filter(m => m === null).length;
+      const pinnedSum = parsedMins.reduce((s, m) => s + (m || 0), 0);
+      const each = unpinnedCount > 0
+        ? Math.max(2, Math.round(Math.max(unpinnedCount * 2, tot - pinnedSum) / unpinnedCount))
+        : 0;
+      state.minutes = parsedMins.map((m, i) =>
+        m !== null ? m : (prevMins ? prevMins[i] : each));
+      state.warnings = parts.map((_, i) => state.warnings[i] || false);
     }
     $('partsFeedback').textContent = state.parts.length + (state.parts.length === 1 ? ' del' : ' delar');
     syncEndFromStartLen();
