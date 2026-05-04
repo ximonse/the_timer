@@ -1011,8 +1011,7 @@
         const rText = ri > 0 ? (R + ri) / 2 : R / 2;
         [lx, ly] = polar(midAngle, rText);
       }
-      // Alltid sektorfärg på texten — chip ger kontrast mot sektorbakgrunden.
-      fillText = baseColor;
+      fillText = isPast ? baseColor + dimSuffix : baseColor;
 
       // Defer label rendering until after spike — labels always on top
       let labelText = truncate(p, 14);
