@@ -676,7 +676,7 @@
     };
     const DARK_CLOCK = {
       bg: '#1c1a16', dimSuffix: '55', grayPast: '#3a3830',
-      mark: '#6a6560', centerMain: '#ede8dc', centerMuted: '#8a8478',
+      mark: '#c8c4bc', centerMain: '#ede8dc', centerMuted: '#8a8478',
       handDark: '#ede8dc', handLight: '#1c1a16', chip: '#1c1a1688',
     };
     if (p === 'meadow') return d
@@ -1097,15 +1097,19 @@
     const drawMark = (ang, len, w, op) => {
       const [mx0, my0] = polar(ang, R);
       const [mx1, my1] = polar(ang, R - len);
-      const ml = document.createElementNS(NS, 'line');
-      ml.setAttribute('x1', mx0); ml.setAttribute('y1', my0);
-      ml.setAttribute('x2', mx1); ml.setAttribute('y2', my1);
-      ml.setAttribute('stroke', markColor);
-      ml.setAttribute('stroke-width', w);
-      ml.setAttribute('stroke-linecap', 'round');
-      ml.setAttribute('opacity', op);
-      ml.setAttribute('pointer-events', 'none');
-      svg.appendChild(ml);
+      const mkLine = (stroke, width, opacity) => {
+        const l = document.createElementNS(NS, 'line');
+        l.setAttribute('x1', mx0); l.setAttribute('y1', my0);
+        l.setAttribute('x2', mx1); l.setAttribute('y2', my1);
+        l.setAttribute('stroke', stroke);
+        l.setAttribute('stroke-width', width);
+        l.setAttribute('stroke-linecap', 'round');
+        l.setAttribute('opacity', opacity);
+        l.setAttribute('pointer-events', 'none');
+        svg.appendChild(l);
+      };
+      mkLine('#ffffff', w + 2.5, 0.38); // white halo — visible on any colored sector
+      mkLine(markColor, w, op);
     };
     if (state.showMin) {
       for (let m = 0; m < 60; m++) drawMark((m/60)*360, 5, 1, 0.45);
