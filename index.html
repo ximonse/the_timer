@@ -547,9 +547,13 @@
       </div>
       <button id="quickStartBtn" class="quickstart"><span class="ico">⚡︎</span> Snabbstart nu</button>
       <div>
-        <label>Lektionsdelar (en per rad)</label>
+        <label style="display:flex;align-items:center;gap:8px;">
+          Lektionsdelar (en per rad)
+          <button id="copyPromptBtn" title="Kopiera AI-planerarprompt" style="font-size:11px;padding:1px 7px;border-radius:5px;border:1px solid var(--border);background:var(--pill);color:var(--menu-muted);cursor:pointer;line-height:1.6;">AI-prompt</button>
+        </label>
         <textarea id="partsArea" placeholder="Genomgång&#10;Eget arbete&#10;Avslut"></textarea>
         <div class="feedback" id="partsFeedback">1 del</div>
+        <div class="feedback" style="opacity:.65;margin-top:4px;">#Rubrik &nbsp;·&nbsp; Aktivitet 10m &nbsp;·&nbsp; - notering &nbsp;·&nbsp; &amp;kommentar</div>
       </div>
       <div>
         <label>Info-ruta (fri text, visas som egen ruta i sidopanelen)</label>
@@ -890,25 +894,43 @@
     const lines = raw.split('\n').map(l => l.replace(/\s+$/, '')).filter(l => l.trim().length > 0);
     const parts = [];
     const notes = [];
-    const parsedMins = []; // null = not specified, number = explicit
+    const parsedMins = [];
+    const infoLines = [];
     lines.forEach(l => {
       const t = l.trim();
+      if (t.startsWith('#')) {
+        const title = t.slice(1).trim();
+        if (title) {
+          state.title = title;
+          $('titleInput').value = title;
+          $('lessonTitle').textContent = title;
+        }
+        return;
+      }
+      if (t.startsWith('&')) {
+        infoLines.push(t.slice(1).trim());
+        return;
+      }
       if (t.startsWith('-') && parts.length > 0) {
         const sub = t.replace(/^-\s*/, '');
         notes[parts.length - 1] = notes[parts.length - 1]
           ? notes[parts.length - 1] + '\n' + sub
           : sub;
+        return;
+      }
+      const m = t.match(/\s+(\d+)m$/i);
+      if (m) {
+        parts.push(t.slice(0, t.length - m[0].length));
+        parsedMins.push(Math.max(1, parseInt(m[1], 10)));
       } else {
-        const m = t.match(/\s+(\d+)m$/i);
-        if (m) {
-          parts.push(t.slice(0, t.length - m[0].length));
-          parsedMins.push(Math.max(1, parseInt(m[1], 10)));
-        } else {
-          parts.push(t);
-          parsedMins.push(null);
-        }
+        parts.push(t);
+        parsedMins.push(null);
       }
     });
+    if (infoLines.length > 0) {
+      state.extraInfo = infoLines.join('\n');
+      $('infoArea').value = state.extraInfo;
+    }
     if (parts.length === 0) {
       state.parts = ['Lektion'];
       state.notes = [''];
@@ -1716,6 +1738,46 @@
         syncToggles();
         save();
       }
+    });
+    const AI_PROMPT = `Du är en assistent som hjälper mig planera närmsta timmen eller mindre.
+Jag beskriver vad jag ska göra, i valfri ordning och hur informellt som helst.
+
+Returnera BARA en färdig lista i det här formatet — inget annat, inga förklaringar:
+
+Vakna 5m
+
+Toa 5m
+- ta med telefonen
+
+Medicin 2m
+
+Frukost 15m
+- kolla inte skärm
+
+& Kom ihåg att det är möte kl 9.
+
+Regler:
+- Realistiska minutuppskattningar baserat på aktiviteten
+- Rimlig ordning (t.ex. vakna → toa → medicin → frukost → promenad)
+- Lägg till 2–3 aktiviteter om jag troligen glömt men som passar sammanhanget
+- Namn på svenska, korta (max 3 ord)
+- Underpunkter måste börja med ett streck: -
+- Underpunkter har ingen tid
+- Ny rad mellan varje aktivitet
+- Kommentarer under listan börjar med & i början av raden
+- Inga rubriker, ingen inledning, ingen avslutning — bara listan
+
+---
+
+[Klistra in dina aktiviteter här]`;
+    $('copyPromptBtn').title = AI_PROMPT;
+    $('copyPromptBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(AI_PROMPT).then(() => {
+        const btn = $('copyPromptBtn');
+        const prev = btn.textContent;
+        btn.textContent = '✓ Kopierad';
+        setTimeout(() => { btn.textContent = prev; }, 1500);
+      });
     });
     $('helpBtn').addEventListener('click', () => $('helpModal').classList.add('open'));
     $('helpClose').addEventListener('click', () => $('helpModal').classList.remove('open'));
